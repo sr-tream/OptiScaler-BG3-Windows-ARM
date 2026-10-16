@@ -8,7 +8,7 @@
 
 #include <proxies/KernelBase_Proxy.h>
 
-#include "detours/detours.h"
+#include <hooks/HookBackend.h>
 
 #include "ffx_api.h"
 #include "ffx_upscale.h"
@@ -414,41 +414,40 @@ void HookFfxExeInputs()
 
     if (_D3D12_CreateContext != nullptr)
     {
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
+        HookBackend::Begin();
 
         if (_D3D12_Configure != nullptr)
         {
             LOG_DEBUG("ffxConfigure_Dx12: {:X}", (size_t) _D3D12_Configure);
-            DetourAttach(&(PVOID&) _D3D12_Configure, ffxConfigure_Dx12);
+            HookBackend::Attach(&(PVOID&) _D3D12_Configure, ffxConfigure_Dx12);
         }
 
         if (_D3D12_CreateContext != nullptr)
         {
             LOG_DEBUG("ffxCreateContext_Dx12: {:X}", (size_t) _D3D12_CreateContext);
-            DetourAttach(&(PVOID&) _D3D12_CreateContext, ffxCreateContext_Dx12);
+            HookBackend::Attach(&(PVOID&) _D3D12_CreateContext, ffxCreateContext_Dx12);
         }
 
         if (_D3D12_DestroyContext != nullptr)
         {
             LOG_DEBUG("ffxDestroyContext_Dx12: {:X}", (size_t) _D3D12_DestroyContext);
-            DetourAttach(&(PVOID&) _D3D12_DestroyContext, ffxDestroyContext_Dx12);
+            HookBackend::Attach(&(PVOID&) _D3D12_DestroyContext, ffxDestroyContext_Dx12);
         }
 
         if (_D3D12_Dispatch != nullptr)
         {
             LOG_DEBUG("ffxDispatch_Dx12: {:X}", (size_t) _D3D12_Dispatch);
-            DetourAttach(&(PVOID&) _D3D12_Dispatch, ffxDispatch_Dx12);
+            HookBackend::Attach(&(PVOID&) _D3D12_Dispatch, ffxDispatch_Dx12);
         }
 
         if (_D3D12_Query != nullptr)
         {
             LOG_DEBUG("ffxQuery_Dx12: {:X}", (size_t) _D3D12_Query);
-            DetourAttach(&(PVOID&) _D3D12_Query, ffxQuery_Dx12);
+            HookBackend::Attach(&(PVOID&) _D3D12_Query, ffxQuery_Dx12);
         }
 
-        auto detourResult = DetourTransactionCommit();
-        if (detourResult != NO_ERROR)
+        auto detourResult = HookBackend::Commit();
+        if (FAILED(detourResult))
         {
             LOG_ERROR("Failed to hook Ffx Exe methods: {:X}", (UINT) detourResult);
             _D3D12_Configure = nullptr;

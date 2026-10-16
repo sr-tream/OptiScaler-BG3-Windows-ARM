@@ -2,7 +2,7 @@
 
 #include "SysUtils.h"
 
-#include <detours/detours.h>
+#include <hooks/HookBackend.h>
 
 #include <winternl.h>
 
@@ -101,10 +101,9 @@ class NtdllProxy
     {
         auto addr = o_RtlGetVersion;
 
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
-        DetourAttach(&(PVOID&) addr, method);
-        DetourTransactionCommit();
+        HookBackend::Begin();
+        HookBackend::Attach(&(PVOID&) addr, method);
+        HookBackend::Commit();
 
         o_RtlGetVersion = addr;
         return addr;
@@ -114,11 +113,10 @@ class NtdllProxy
     {
         auto addr = o_LdrLoadDll;
 
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
-        DetourAttach(&(PVOID&) addr, method);
-        auto detourResult = DetourTransactionCommit();
-        if (detourResult != NO_ERROR)
+        HookBackend::Begin();
+        HookBackend::Attach(&(PVOID&) addr, method);
+        auto detourResult = HookBackend::Commit();
+        if (FAILED(detourResult))
         {
             LOG_ERROR("Failed to hook: {:X}", detourResult);
             return nullptr;
@@ -132,11 +130,10 @@ class NtdllProxy
     {
         auto addr = o_LdrUnloadDll;
 
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
-        DetourAttach(&(PVOID&) addr, method);
-        auto detourResult = DetourTransactionCommit();
-        if (detourResult != NO_ERROR)
+        HookBackend::Begin();
+        HookBackend::Attach(&(PVOID&) addr, method);
+        auto detourResult = HookBackend::Commit();
+        if (FAILED(detourResult))
         {
             LOG_ERROR("Failed to hook: {:X}", detourResult);
             return nullptr;
@@ -150,11 +147,10 @@ class NtdllProxy
     {
         auto addr = o_NtLoadDll;
 
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
-        DetourAttach(&(PVOID&) addr, method);
-        auto detourResult = DetourTransactionCommit();
-        if (detourResult != NO_ERROR)
+        HookBackend::Begin();
+        HookBackend::Attach(&(PVOID&) addr, method);
+        auto detourResult = HookBackend::Commit();
+        if (FAILED(detourResult))
         {
             LOG_ERROR("Failed to hook: {:X}", detourResult);
             return nullptr;

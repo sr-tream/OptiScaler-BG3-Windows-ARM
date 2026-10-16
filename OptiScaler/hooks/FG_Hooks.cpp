@@ -21,7 +21,7 @@
 #include <menu/menu_overlay_dx.h>
 
 #include <d3d12.h>
-#include <detours/detours.h>
+#include <hooks/HookBackend.h>
 
 #define XEFG_RESOURCE_REF_LIMIT 1
 
@@ -424,40 +424,39 @@ void FGHooks::HookFGSwapchain(IDXGISwapChain* pSwapChain)
         LOG_TRACE("FGSCResizeBuffers1: {:X}", (size_t) o_FGSCResizeBuffers1);
         LOG_TRACE("FGSCGetFrameLatencyWaitableObject: {:X}", (size_t) o_FGSCGetFrameLatencyWaitableObject);
 
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
+        HookBackend::Begin();
 
-        DetourAttach(&(PVOID&) o_FGRelease, hkFGRelease);
-        DetourAttach(&(PVOID&) o_FGSCPresent, hkFGPresent);
-        DetourAttach(&(PVOID&) o_FGSCResizeTarget, hkResizeTarget);
-        DetourAttach(&(PVOID&) o_FGSCResizeBuffers, hkResizeBuffers);
-        DetourAttach(&(PVOID&) o_FGSCSetFullscreenState, hkSetFullscreenState);
+        HookBackend::Attach(&(PVOID&) o_FGRelease, hkFGRelease);
+        HookBackend::Attach(&(PVOID&) o_FGSCPresent, hkFGPresent);
+        HookBackend::Attach(&(PVOID&) o_FGSCResizeTarget, hkResizeTarget);
+        HookBackend::Attach(&(PVOID&) o_FGSCResizeBuffers, hkResizeBuffers);
+        HookBackend::Attach(&(PVOID&) o_FGSCSetFullscreenState, hkSetFullscreenState);
 
         if (o_FGSCPresent1 != nullptr)
-            DetourAttach(&(PVOID&) o_FGSCPresent1, hkFGPresent1);
+            HookBackend::Attach(&(PVOID&) o_FGSCPresent1, hkFGPresent1);
 
         if (o_FGSCResizeBuffers1 != nullptr)
-            DetourAttach(&(PVOID&) o_FGSCResizeBuffers1, hkResizeBuffers1);
+            HookBackend::Attach(&(PVOID&) o_FGSCResizeBuffers1, hkResizeBuffers1);
 
         if (State::Instance().activeFgOutput == FGOutput::XeFG)
         {
             if (o_FGSCGetFullscreenState != nullptr)
-                DetourAttach(&(PVOID&) o_FGSCGetFullscreenState, hkGetFullscreenState);
+                HookBackend::Attach(&(PVOID&) o_FGSCGetFullscreenState, hkGetFullscreenState);
 
             if (o_FGSCGetFullscreenDesc != nullptr)
-                DetourAttach(&(PVOID&) o_FGSCGetFullscreenDesc, hkGetFullscreenDesc);
+                HookBackend::Attach(&(PVOID&) o_FGSCGetFullscreenDesc, hkGetFullscreenDesc);
 
             if ((Config::Instance()->SimulateWaitableObject.value_or_default() ||
                  (State::Instance().gameEngine == GameEngineType::Unity &&
                   State::Instance().activeFgOutput == FGOutput::XeFG)) &&
                 o_FGSCGetFrameLatencyWaitableObject != nullptr)
             {
-                DetourAttach(&(PVOID&) o_FGSCGetFrameLatencyWaitableObject, hkGetFrameLatencyWaitableObject);
+                HookBackend::Attach(&(PVOID&) o_FGSCGetFrameLatencyWaitableObject, hkGetFrameLatencyWaitableObject);
             }
         }
 
-        auto detourResult = DetourTransactionCommit();
-        if (detourResult != NO_ERROR)
+        auto detourResult = HookBackend::Commit();
+        if (FAILED(detourResult))
         {
             LOG_ERROR("Failed to attach detour: {:X}", detourResult);
             o_FGRelease = nullptr;

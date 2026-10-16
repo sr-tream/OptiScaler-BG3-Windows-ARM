@@ -4,7 +4,7 @@
 #include <Config.h>
 #include <State.h>
 
-#include <detours/detours.h>
+#include <hooks/HookBackend.h>
 
 #include <algorithm>
 #include <array>
@@ -706,30 +706,29 @@ void ResTrack_Dx11::HookDevice(ID3D11Device* device)
 
     g_hookedOMSetRenderTargetsAddress = vtable[33];
 
-    DetourTransactionBegin();
-    DetourUpdateThread(GetCurrentThread());
+    HookBackend::Begin();
 
-    DetourAttach(&(PVOID&) o_PSSetShaderResources, hkPSSetShaderResources);
-    DetourAttach(&(PVOID&) o_VSSetShaderResources, hkVSSetShaderResources);
-    DetourAttach(&(PVOID&) o_GSSetShaderResources, hkGSSetShaderResources);
-    DetourAttach(&(PVOID&) o_HSSetShaderResources, hkHSSetShaderResources);
-    DetourAttach(&(PVOID&) o_DSSetShaderResources, hkDSSetShaderResources);
-    DetourAttach(&(PVOID&) o_CSSetShaderResources, hkCSSetShaderResources);
-    DetourAttach(&(PVOID&) o_CSSetUnorderedAccessViews, hkCSSetUnorderedAccessViews);
-    DetourAttach(&(PVOID&) o_OMSetRenderTargets, hkOMSetRenderTargets);
-    DetourAttach(&(PVOID&) o_OMSetRenderTargetsAndUnorderedAccessViews, hkOMSetRenderTargetsAndUnorderedAccessViews);
-    DetourAttach(&(PVOID&) o_Draw, hkDraw);
-    DetourAttach(&(PVOID&) o_DrawIndexed, hkDrawIndexed);
-    DetourAttach(&(PVOID&) o_DrawInstanced, hkDrawInstanced);
-    DetourAttach(&(PVOID&) o_DrawIndexedInstanced, hkDrawIndexedInstanced);
-    DetourAttach(&(PVOID&) o_DrawAuto, hkDrawAuto);
-    DetourAttach(&(PVOID&) o_DrawIndexedInstancedIndirect, hkDrawIndexedInstancedIndirect);
-    DetourAttach(&(PVOID&) o_DrawInstancedIndirect, hkDrawInstancedIndirect);
-    DetourAttach(&(PVOID&) o_Dispatch, hkDispatch);
-    DetourAttach(&(PVOID&) o_DispatchIndirect, hkDispatchIndirect);
+    HookBackend::Attach(&(PVOID&) o_PSSetShaderResources, hkPSSetShaderResources);
+    HookBackend::Attach(&(PVOID&) o_VSSetShaderResources, hkVSSetShaderResources);
+    HookBackend::Attach(&(PVOID&) o_GSSetShaderResources, hkGSSetShaderResources);
+    HookBackend::Attach(&(PVOID&) o_HSSetShaderResources, hkHSSetShaderResources);
+    HookBackend::Attach(&(PVOID&) o_DSSetShaderResources, hkDSSetShaderResources);
+    HookBackend::Attach(&(PVOID&) o_CSSetShaderResources, hkCSSetShaderResources);
+    HookBackend::Attach(&(PVOID&) o_CSSetUnorderedAccessViews, hkCSSetUnorderedAccessViews);
+    HookBackend::Attach(&(PVOID&) o_OMSetRenderTargets, hkOMSetRenderTargets);
+    HookBackend::Attach(&(PVOID&) o_OMSetRenderTargetsAndUnorderedAccessViews, hkOMSetRenderTargetsAndUnorderedAccessViews);
+    HookBackend::Attach(&(PVOID&) o_Draw, hkDraw);
+    HookBackend::Attach(&(PVOID&) o_DrawIndexed, hkDrawIndexed);
+    HookBackend::Attach(&(PVOID&) o_DrawInstanced, hkDrawInstanced);
+    HookBackend::Attach(&(PVOID&) o_DrawIndexedInstanced, hkDrawIndexedInstanced);
+    HookBackend::Attach(&(PVOID&) o_DrawAuto, hkDrawAuto);
+    HookBackend::Attach(&(PVOID&) o_DrawIndexedInstancedIndirect, hkDrawIndexedInstancedIndirect);
+    HookBackend::Attach(&(PVOID&) o_DrawInstancedIndirect, hkDrawInstancedIndirect);
+    HookBackend::Attach(&(PVOID&) o_Dispatch, hkDispatch);
+    HookBackend::Attach(&(PVOID&) o_DispatchIndirect, hkDispatchIndirect);
 
-    const auto result = DetourTransactionCommit();
-    if (result != NO_ERROR)
+    const auto result = HookBackend::Commit();
+    if (FAILED(result))
     {
         LOG_ERROR("Failed to hook ID3D11DeviceContext for Hudfix: {:X}", result);
 
@@ -787,67 +786,66 @@ void ResTrack_Dx11::ReleaseHooks()
 
     if (o_OMSetRenderTargets != nullptr)
     {
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
+        HookBackend::Begin();
 
         if (o_PSSetShaderResources != nullptr)
-            DetourDetach(&(PVOID&) o_PSSetShaderResources, hkPSSetShaderResources);
+            HookBackend::Detach(&(PVOID&) o_PSSetShaderResources, hkPSSetShaderResources);
 
         if (o_VSSetShaderResources != nullptr)
-            DetourDetach(&(PVOID&) o_VSSetShaderResources, hkVSSetShaderResources);
+            HookBackend::Detach(&(PVOID&) o_VSSetShaderResources, hkVSSetShaderResources);
 
         if (o_GSSetShaderResources != nullptr)
-            DetourDetach(&(PVOID&) o_GSSetShaderResources, hkGSSetShaderResources);
+            HookBackend::Detach(&(PVOID&) o_GSSetShaderResources, hkGSSetShaderResources);
 
         if (o_HSSetShaderResources != nullptr)
-            DetourDetach(&(PVOID&) o_HSSetShaderResources, hkHSSetShaderResources);
+            HookBackend::Detach(&(PVOID&) o_HSSetShaderResources, hkHSSetShaderResources);
 
         if (o_DSSetShaderResources != nullptr)
-            DetourDetach(&(PVOID&) o_DSSetShaderResources, hkDSSetShaderResources);
+            HookBackend::Detach(&(PVOID&) o_DSSetShaderResources, hkDSSetShaderResources);
 
         if (o_CSSetShaderResources != nullptr)
-            DetourDetach(&(PVOID&) o_CSSetShaderResources, hkCSSetShaderResources);
+            HookBackend::Detach(&(PVOID&) o_CSSetShaderResources, hkCSSetShaderResources);
 
         if (o_CSSetUnorderedAccessViews != nullptr)
-            DetourDetach(&(PVOID&) o_CSSetUnorderedAccessViews, hkCSSetUnorderedAccessViews);
+            HookBackend::Detach(&(PVOID&) o_CSSetUnorderedAccessViews, hkCSSetUnorderedAccessViews);
 
         if (o_OMSetRenderTargets != nullptr)
-            DetourDetach(&(PVOID&) o_OMSetRenderTargets, hkOMSetRenderTargets);
+            HookBackend::Detach(&(PVOID&) o_OMSetRenderTargets, hkOMSetRenderTargets);
 
         if (o_OMSetRenderTargetsAndUnorderedAccessViews != nullptr)
-            DetourDetach(&(PVOID&) o_OMSetRenderTargetsAndUnorderedAccessViews,
+            HookBackend::Detach(&(PVOID&) o_OMSetRenderTargetsAndUnorderedAccessViews,
                          hkOMSetRenderTargetsAndUnorderedAccessViews);
 
         if (o_Draw != nullptr)
-            DetourDetach(&(PVOID&) o_Draw, hkDraw);
+            HookBackend::Detach(&(PVOID&) o_Draw, hkDraw);
 
         if (o_DrawIndexed != nullptr)
-            DetourDetach(&(PVOID&) o_DrawIndexed, hkDrawIndexed);
+            HookBackend::Detach(&(PVOID&) o_DrawIndexed, hkDrawIndexed);
 
         if (o_DrawInstanced != nullptr)
-            DetourDetach(&(PVOID&) o_DrawInstanced, hkDrawInstanced);
+            HookBackend::Detach(&(PVOID&) o_DrawInstanced, hkDrawInstanced);
 
         if (o_DrawIndexedInstanced != nullptr)
-            DetourDetach(&(PVOID&) o_DrawIndexedInstanced, hkDrawIndexedInstanced);
+            HookBackend::Detach(&(PVOID&) o_DrawIndexedInstanced, hkDrawIndexedInstanced);
 
         if (o_DrawAuto != nullptr)
-            DetourDetach(&(PVOID&) o_DrawAuto, hkDrawAuto);
+            HookBackend::Detach(&(PVOID&) o_DrawAuto, hkDrawAuto);
 
         if (o_DrawIndexedInstancedIndirect != nullptr)
-            DetourDetach(&(PVOID&) o_DrawIndexedInstancedIndirect, hkDrawIndexedInstancedIndirect);
+            HookBackend::Detach(&(PVOID&) o_DrawIndexedInstancedIndirect, hkDrawIndexedInstancedIndirect);
 
         if (o_DrawInstancedIndirect != nullptr)
-            DetourDetach(&(PVOID&) o_DrawInstancedIndirect, hkDrawInstancedIndirect);
+            HookBackend::Detach(&(PVOID&) o_DrawInstancedIndirect, hkDrawInstancedIndirect);
 
         if (o_Dispatch != nullptr)
-            DetourDetach(&(PVOID&) o_Dispatch, hkDispatch);
+            HookBackend::Detach(&(PVOID&) o_Dispatch, hkDispatch);
 
         if (o_DispatchIndirect != nullptr)
-            DetourDetach(&(PVOID&) o_DispatchIndirect, hkDispatchIndirect);
+            HookBackend::Detach(&(PVOID&) o_DispatchIndirect, hkDispatchIndirect);
 
-        const auto result = DetourTransactionCommit();
+        const auto result = HookBackend::Commit();
 
-        if (result != NO_ERROR)
+        if (FAILED(result))
             LOG_ERROR("Failed to unhook ID3D11DeviceContext Hudfix hooks: {:X}", result);
     }
 

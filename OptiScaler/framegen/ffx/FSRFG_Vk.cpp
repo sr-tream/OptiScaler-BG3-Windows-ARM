@@ -463,7 +463,20 @@ void FSRFG_Vk::Deactivate()
 void FSRFG_Vk::EvaluateState(FG_Constants& fgConstants)
 {
     OwnedLockGuard lock(Mutex, 555);
+    EvaluateStateInternal(fgConstants);
+}
 
+bool FSRFG_Vk::TryEvaluateState(FG_Constants& fgConstants)
+{
+    OwnedTryLockGuard lock(Mutex, 555);
+    if (!lock)
+        return false;
+    EvaluateStateInternal(fgConstants);
+    return true;
+}
+
+void FSRFG_Vk::EvaluateStateInternal(FG_Constants& fgConstants)
+{
     auto& state = State::Instance();
     _constants = fgConstants;
 

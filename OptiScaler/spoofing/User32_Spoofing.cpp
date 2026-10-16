@@ -3,7 +3,7 @@
 
 #include <Config.h>
 
-#include <detours/detours.h>
+#include <hooks/HookBackend.h>
 
 typedef BOOL(WINAPI* PFN_EnumDisplayDevicesA)(PSTR lpDevice, uint32_t iDevNum, DISPLAY_DEVICEA* lpDisplayDevice,
                                               uint32_t dwFlags);
@@ -116,21 +116,20 @@ void User32Spoofing::Hook()
     LOG_FUNC();
 
     o_EnumDisplayDevicesA =
-        reinterpret_cast<PFN_EnumDisplayDevicesA>(DetourFindFunction("User32.dll", "EnumDisplayDevicesA"));
+        reinterpret_cast<PFN_EnumDisplayDevicesA>(HookBackend::FindFunction("User32.dll", "EnumDisplayDevicesA"));
     o_EnumDisplayDevicesW =
-        reinterpret_cast<PFN_EnumDisplayDevicesW>(DetourFindFunction("User32.dll", "EnumDisplayDevicesW"));
+        reinterpret_cast<PFN_EnumDisplayDevicesW>(HookBackend::FindFunction("User32.dll", "EnumDisplayDevicesW"));
 
-    DetourTransactionBegin();
-    DetourUpdateThread(GetCurrentThread());
+    HookBackend::Begin();
 
     if (o_EnumDisplayDevicesA)
-        DetourAttach(&(PVOID&) o_EnumDisplayDevicesA, hkEnumDisplayDevicesA);
+        HookBackend::Attach(&(PVOID&) o_EnumDisplayDevicesA, hkEnumDisplayDevicesA);
 
     if (o_EnumDisplayDevicesW)
-        DetourAttach(&(PVOID&) o_EnumDisplayDevicesW, hkEnumDisplayDevicesW);
+        HookBackend::Attach(&(PVOID&) o_EnumDisplayDevicesW, hkEnumDisplayDevicesW);
 
-    auto detourResult = DetourTransactionCommit();
-    if (detourResult != NO_ERROR)
+    auto detourResult = HookBackend::Commit();
+    if (FAILED(detourResult))
     {
         LOG_ERROR("Failed to install User32 spoofing hooks: {}", detourResult);
         o_EnumDisplayDevicesA = nullptr;
@@ -140,17 +139,16 @@ void User32Spoofing::Hook()
 
 void User32Spoofing::Unhook()
 {
-    DetourTransactionBegin();
-    DetourUpdateThread(GetCurrentThread());
+    HookBackend::Begin();
 
     if (o_EnumDisplayDevicesA)
-        DetourDetach(&(PVOID&) o_EnumDisplayDevicesA, hkEnumDisplayDevicesA);
+        HookBackend::Detach(&(PVOID&) o_EnumDisplayDevicesA, hkEnumDisplayDevicesA);
 
     if (o_EnumDisplayDevicesW)
-        DetourDetach(&(PVOID&) o_EnumDisplayDevicesW, hkEnumDisplayDevicesW);
+        HookBackend::Detach(&(PVOID&) o_EnumDisplayDevicesW, hkEnumDisplayDevicesW);
 
-    auto detourResult = DetourTransactionCommit();
-    if (detourResult != NO_ERROR)
+    auto detourResult = HookBackend::Commit();
+    if (FAILED(detourResult))
     {
         LOG_ERROR("Failed to uninstall User32 spoofing hooks: {}", detourResult);
     }

@@ -441,6 +441,14 @@ bool FFXFeatureVk::EvaluateInternal(VkCommandBuffer InCmdBuffer, NVSDK_NGX_Param
     else
         params.cameraFovAngleVertical = GetRadiansFromDeg(60);
 
+    if (cfg.FsrUseFsrInputValues.value_or_default())
+    {
+        InParameters->Get("FSR.cameraNear", &params.cameraNear);
+        InParameters->Get("FSR.cameraFar", &params.cameraFar);
+        InParameters->Get("FSR.cameraFovAngleVertical", &params.cameraFovAngleVertical);
+        InParameters->Get("FSR.viewSpaceToMetersFactor", &params.viewSpaceToMetersFactor);
+    }
+
     if (InParameters->Get(NVSDK_NGX_Parameter_FrameTimeDeltaInMsec, &params.frameTimeDelta) !=
             NVSDK_NGX_Result_Success ||
         params.frameTimeDelta < 1.0f)

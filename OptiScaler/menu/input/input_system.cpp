@@ -1113,6 +1113,10 @@ void ResetStateAfterShutdown()
     _state.DeferredClipIsNull = false;
 
     _state.CursorClipReleasedForMenu = false;
+    _state.CursorClipApplyPending = false;
+    _state.CursorClipApplied = false;
+    _state.CursorClipMessagePosted = false;
+    ++_state.CursorClipGeneration;
 
     _state.MouseWheel = 0.0f;
     _state.TextInput.clear();
@@ -1129,6 +1133,10 @@ void Shutdown()
         ApplyMenuVisibilityChangeLocked(false);
     else if (_state.CursorClipReleasedForMenu)
         EndCursorClipBlockLocked();
+
+    lock.unlock();
+    ScheduleCursorClipPolicy();
+    lock.lock();
 
     const bool windowSubclassRemoved = RemoveWindowSubclass(true);
     const bool trackedWindowsHooksRemoved = ReleaseTrackedWindowsHooksLocked();
@@ -1196,6 +1204,7 @@ void BeginFrame(HWND targetHwnd, bool isUwp)
     lock.unlock();
 
     // Module/export resolution can wait on the loader
+    ScheduleCursorClipPolicy();
     UpdateOptionalInputIntegrations();
 }
 
@@ -1216,6 +1225,7 @@ void BeginFrame(HWND targetHwnd, HWND inputHwnd, bool isUwp)
     lock.unlock();
 
     // Module/export resolution can wait on the loader
+    ScheduleCursorClipPolicy();
     UpdateOptionalInputIntegrations();
 }
 
@@ -1366,6 +1376,8 @@ void EndFrame(bool menuVisible)
     ApplyMenuVisibilityChangeLocked(menuVisible);
     LogInputHealthSnapshotLocked("EndFrame");
     ClearTransientState();
+    lock.unlock();
+    ScheduleCursorClipPolicy();
 }
 
 void SetMenuVisible(bool visible)
@@ -1373,6 +1385,8 @@ void SetMenuVisible(bool visible)
     std::unique_lock lock(_state.Mutex);
 
     ApplyMenuVisibilityChangeLocked(visible);
+    lock.unlock();
+    ScheduleCursorClipPolicy();
 }
 
 bool IsFocused()

@@ -5,6 +5,8 @@
 #include <Util.h>
 #include <Config.h>
 #include <SysUtils.h>
+#include <inputs/Bg3Fsr2_Bridge.h>
+#include <inputs/Bg3Fsr2_Vk.h>
 
 #include <imgui/imgui_impl_vulkan.h>
 #include <imgui/imgui_impl_win32.h>
@@ -615,7 +617,18 @@ bool MenuOverlayVk::QueuePresent(VkQueue queue, VkPresentInfoKHR* pPresentInfo)
             ImGui_ImplVulkanH_Frame* fd = &_ImVulkan_Frames[idx];
             const bool blurMenu = blurReady && MenuCommon::BackgroundBlurUsed();
 
-            vkWaitForFences(_ImVulkan_Info.Device, 1, &fd->Fence, VK_TRUE, UINT64_MAX);
+            if (Bg3Fsr2::ReplacementEnabled())
+            {
+                // The FG presenter can stop consuming work while the game is minimized.
+                // Skip this overlay frame rather than waiting on the application's render thread.
+                const auto status = vkGetFenceStatus(_ImVulkan_Info.Device, fd->Fence);
+                if (status == VK_NOT_READY)
+                    return true;
+                if (status != VK_SUCCESS)
+                    return false;
+            }
+            else
+                vkWaitForFences(_ImVulkan_Info.Device, 1, &fd->Fence, VK_TRUE, UINT64_MAX);
             vkResetFences(_ImVulkan_Info.Device, 1, &fd->Fence);
 
             {

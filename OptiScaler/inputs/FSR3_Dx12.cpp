@@ -11,7 +11,7 @@
 
 #include <scanner/scanner.h>
 
-#include "detours/detours.h"
+#include <hooks/HookBackend.h>
 #include "fsr3/ffx_fsr3upscaler.h"
 #include "fsr3/dx12/ffx_dx12.h"
 
@@ -654,8 +654,7 @@ void HookFSR3ExeInputs()
 {
     LOG_INFO("Trying to hook FSR3 methods");
 
-    DetourTransactionBegin();
-    DetourUpdateThread(GetCurrentThread());
+    HookBackend::Begin();
 
     if (o_ffxFsr3UpscalerContextCreate_Dx12 == nullptr)
     {
@@ -663,7 +662,7 @@ void HookFSR3ExeInputs()
             exeModule, "ffxFsr3UpscalerContextCreate");
 
         if (o_ffxFsr3UpscalerContextCreate_Dx12 != nullptr)
-            DetourAttach(&(PVOID&) o_ffxFsr3UpscalerContextCreate_Dx12, ffxFsr3ContextCreate_Dx12);
+            HookBackend::Attach(&(PVOID&) o_ffxFsr3UpscalerContextCreate_Dx12, ffxFsr3ContextCreate_Dx12);
 
         LOG_DEBUG("ffxFsr3UpscalerContextCreate_Dx12: {:X}", (size_t) o_ffxFsr3UpscalerContextCreate_Dx12);
     }
@@ -674,7 +673,7 @@ void HookFSR3ExeInputs()
             exeModule, "ffxFsr3UpscalerContextDispatch");
 
         if (o_ffxFsr3UpscalerContextDispatch_Dx12 != nullptr)
-            DetourAttach(&(PVOID&) o_ffxFsr3UpscalerContextDispatch_Dx12, ffxFsr3ContextDispatch_Dx12);
+            HookBackend::Attach(&(PVOID&) o_ffxFsr3UpscalerContextDispatch_Dx12, ffxFsr3ContextDispatch_Dx12);
 
         LOG_DEBUG("ffxFsr3UpscalerContextDispatch_Dx12: {:X}", (size_t) o_ffxFsr3UpscalerContextDispatch_Dx12);
     }
@@ -685,7 +684,7 @@ void HookFSR3ExeInputs()
             exeModule, "ffxFsr3UpscalerContextDestroy");
 
         if (o_ffxFsr3UpscalerContextDestroy_Dx12 != nullptr)
-            DetourAttach(&(PVOID&) o_ffxFsr3UpscalerContextDestroy_Dx12, ffxFsr3ContextDestroy_Dx12);
+            HookBackend::Attach(&(PVOID&) o_ffxFsr3UpscalerContextDestroy_Dx12, ffxFsr3ContextDestroy_Dx12);
 
         LOG_DEBUG("ffxFsr3UpscalerContextDestroy_Dx12: {:X}", (size_t) o_ffxFsr3UpscalerContextDestroy_Dx12);
     }
@@ -697,7 +696,7 @@ void HookFSR3ExeInputs()
                 exeModule, "ffxFsr3UpscalerGetUpscaleRatioFromQualityMode");
 
         if (o_ffxFsr3UpscalerGetUpscaleRatioFromQualityMode_Dx12 != nullptr)
-            DetourAttach(&(PVOID&) o_ffxFsr3UpscalerGetUpscaleRatioFromQualityMode_Dx12,
+            HookBackend::Attach(&(PVOID&) o_ffxFsr3UpscalerGetUpscaleRatioFromQualityMode_Dx12,
                          ffxFsr3GetUpscaleRatioFromQualityMode_Dx12);
 
         LOG_DEBUG("ffxFsr3UpscalerGetUpscaleRatioFromQualityMode_Dx12: {:X}",
@@ -711,7 +710,7 @@ void HookFSR3ExeInputs()
                 exeModule, "ffxFsr3UpscalerGetRenderResolutionFromQualityMode");
 
         if (o_ffxFsr3UpscalerGetRenderResolutionFromQualityMode_Dx12 != nullptr)
-            DetourAttach(&(PVOID&) o_ffxFsr3UpscalerGetRenderResolutionFromQualityMode_Dx12,
+            HookBackend::Attach(&(PVOID&) o_ffxFsr3UpscalerGetRenderResolutionFromQualityMode_Dx12,
                          ffxFsr3GetRenderResolutionFromQualityMode_Dx12);
 
         LOG_DEBUG("ffxFsr3UpscalerGetRenderResolutionFromQualityMode_Dx12: {:X}",
@@ -734,7 +733,7 @@ void HookFSR3ExeInputs()
                 exeModule, createPattern, 0, (size_t) o_ffxFsr3UpscalerContextCreate_Pattern_Dx12 + 2);
 
         if (o_ffxFsr3UpscalerContextCreate_Pattern_Dx12 != nullptr)
-            DetourAttach(&(PVOID&) o_ffxFsr3UpscalerContextCreate_Pattern_Dx12, ffxFsr3ContextCreate_Pattern_Dx12);
+            HookBackend::Attach(&(PVOID&) o_ffxFsr3UpscalerContextCreate_Pattern_Dx12, ffxFsr3ContextCreate_Pattern_Dx12);
 
         // Destroy
         LOG_DEBUG("Checking destroyPattern");
@@ -752,7 +751,7 @@ void HookFSR3ExeInputs()
                 (PFN_ffxFsr3UpscalerContextDestroy) scanner::GetAddress(exeModule, destroyPattern, 0);
 
         if (o_ffxFsr3UpscalerContextDestroy_Pattern_Dx12 != nullptr)
-            DetourAttach(&(PVOID&) o_ffxFsr3UpscalerContextDestroy_Pattern_Dx12, ffxFsr3ContextDestroy_Pattern_Dx12);
+            HookBackend::Attach(&(PVOID&) o_ffxFsr3UpscalerContextDestroy_Pattern_Dx12, ffxFsr3ContextDestroy_Pattern_Dx12);
 
         LOG_DEBUG("ffxFsr3UpscalerContextDestroy_Pattern_Dx12: {:X}",
                   (size_t) o_ffxFsr3UpscalerContextDestroy_Pattern_Dx12);
@@ -772,7 +771,7 @@ void HookFSR3ExeInputs()
                 (PFN_ffxFsr3UpscalerContextDispatch) scanner::GetAddress(exeModule, dispatchPattern, 0);
 
         if (o_ffxFsr3UpscalerContextDispatch_Pattern_Dx12 != nullptr)
-            DetourAttach(&(PVOID&) o_ffxFsr3UpscalerContextDispatch_Pattern_Dx12, ffxFsr3ContextDispatch_Pattern_Dx12);
+            HookBackend::Attach(&(PVOID&) o_ffxFsr3UpscalerContextDispatch_Pattern_Dx12, ffxFsr3ContextDispatch_Pattern_Dx12);
 
         LOG_DEBUG("ffxFsr3UpscalerContextDispatch_Pattern_Dx12: {:X}",
                   (size_t) o_ffxFsr3UpscalerContextDispatch_Pattern_Dx12);
@@ -787,7 +786,7 @@ void HookFSR3ExeInputs()
             (PFN_ffxFsr3UpscalerGetUpscaleRatioFromQualityMode) scanner::GetAddress(exeModule, rfqPattern, 0);
 
         if (o_ffxFsr3UpscalerGetUpscaleRatioFromQualityMode_Pattern_Dx12 != nullptr)
-            DetourAttach(&(PVOID&) o_ffxFsr3UpscalerGetUpscaleRatioFromQualityMode_Pattern_Dx12,
+            HookBackend::Attach(&(PVOID&) o_ffxFsr3UpscalerGetUpscaleRatioFromQualityMode_Pattern_Dx12,
                          ffxFsr3GetUpscaleRatioFromQualityMode_Pattern_Dx12);
 
         LOG_DEBUG("ffxFsr3UpscalerGetUpscaleRatioFromQualityMode_Pattern_Dx12: {:X}",
@@ -796,17 +795,17 @@ void HookFSR3ExeInputs()
 
     // if (o_ffxFSR3GetInterfaceDX12 == nullptr)
     //{
-    //     o_ffxFSR3GetInterfaceDX12 = (PFN_ffxFSR3GetInterfaceDX12)DetourFindFunction(exeModule,
+    //     o_ffxFSR3GetInterfaceDX12 = (PFN_ffxFSR3GetInterfaceDX12)HookBackend::FindFunction(exeModule,
     //     "ffxGetInterfaceDX12");
 
     //    if (o_ffxFSR3GetInterfaceDX12 != nullptr)
-    //        DetourAttach(&(PVOID&)o_ffxFSR3GetInterfaceDX12, hk_ffxFsr3GetInterfaceDX12);
+    //        HookBackend::Attach(&(PVOID&)o_ffxFSR3GetInterfaceDX12, hk_ffxFsr3GetInterfaceDX12);
 
     //    LOG_DEBUG("ffxGetInterfaceDX12: {:X}", (size_t)o_ffxFSR3GetInterfaceDX12);
     //}
 
-    auto detourResult = DetourTransactionCommit();
-    if (detourResult != NO_ERROR)
+    auto detourResult = HookBackend::Commit();
+    if (FAILED(detourResult))
     {
         LOG_ERROR("DetourTransactionCommit failed: {:X}", detourResult);
         o_ffxFSR3GetInterfaceDX12 = nullptr;
@@ -833,8 +832,7 @@ void HookFSR3Inputs(HMODULE module)
 
     if (module != nullptr)
     {
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
+        HookBackend::Begin();
 
         if (o_ffxFSR3GetInterfaceDX12 == nullptr)
         {
@@ -842,7 +840,7 @@ void HookFSR3Inputs(HMODULE module)
                 module, "ffxFsr3UpscalerContextCreate");
 
             if (o_ffxFsr3UpscalerContextCreate_Dx12 != nullptr)
-                DetourAttach(&(PVOID&) o_ffxFsr3UpscalerContextCreate_Dx12, ffxFsr3ContextCreate_Dx12);
+                HookBackend::Attach(&(PVOID&) o_ffxFsr3UpscalerContextCreate_Dx12, ffxFsr3ContextCreate_Dx12);
 
             LOG_DEBUG("ffxFsr3UpscalerContextCreate_Dx12: {:X}", (size_t) o_ffxFsr3UpscalerContextCreate_Dx12);
         }
@@ -854,7 +852,7 @@ void HookFSR3Inputs(HMODULE module)
                     module, "ffxFsr3UpscalerContextDispatch");
 
             if (o_ffxFsr3UpscalerContextDispatch_Dx12 != nullptr)
-                DetourAttach(&(PVOID&) o_ffxFsr3UpscalerContextDispatch_Dx12, ffxFsr3ContextDispatch_Dx12);
+                HookBackend::Attach(&(PVOID&) o_ffxFsr3UpscalerContextDispatch_Dx12, ffxFsr3ContextDispatch_Dx12);
 
             LOG_DEBUG("ffxFsr3UpscalerContextDispatch_Dx12: {:X}", (size_t) o_ffxFsr3UpscalerContextDispatch_Dx12);
         }
@@ -866,7 +864,7 @@ void HookFSR3Inputs(HMODULE module)
                                                                                        "ffxFsr3UpscalerContextDestroy");
 
             if (o_ffxFsr3UpscalerContextDestroy_Dx12 != nullptr)
-                DetourAttach(&(PVOID&) o_ffxFsr3UpscalerContextDestroy_Dx12, ffxFsr3ContextDestroy_Dx12);
+                HookBackend::Attach(&(PVOID&) o_ffxFsr3UpscalerContextDestroy_Dx12, ffxFsr3ContextDestroy_Dx12);
 
             LOG_DEBUG("ffxFsr3UpscalerContextDestroy_Dx12: {:X}", (size_t) o_ffxFsr3UpscalerContextDestroy_Dx12);
         }
@@ -878,7 +876,7 @@ void HookFSR3Inputs(HMODULE module)
                     module, "ffxFsr3UpscalerGetUpscaleRatioFromQualityMode");
 
             if (o_ffxFsr3UpscalerGetUpscaleRatioFromQualityMode_Dx12 != nullptr)
-                DetourAttach(&(PVOID&) o_ffxFsr3UpscalerGetUpscaleRatioFromQualityMode_Dx12,
+                HookBackend::Attach(&(PVOID&) o_ffxFsr3UpscalerGetUpscaleRatioFromQualityMode_Dx12,
                              ffxFsr3GetUpscaleRatioFromQualityMode_Dx12);
 
             LOG_DEBUG("ffxFsr3UpscalerGetUpscaleRatioFromQualityMode_Dx12: {:X}",
@@ -892,15 +890,15 @@ void HookFSR3Inputs(HMODULE module)
                     module, "ffxFsr3UpscalerGetRenderResolutionFromQualityMode");
 
             if (o_ffxFsr3UpscalerGetRenderResolutionFromQualityMode_Dx12 != nullptr)
-                DetourAttach(&(PVOID&) o_ffxFsr3UpscalerGetRenderResolutionFromQualityMode_Dx12,
+                HookBackend::Attach(&(PVOID&) o_ffxFsr3UpscalerGetRenderResolutionFromQualityMode_Dx12,
                              ffxFsr3GetRenderResolutionFromQualityMode_Dx12);
 
             LOG_DEBUG("ffxFsr3UpscalerGetRenderResolutionFromQualityMode_Dx12: {:X}",
                       (size_t) o_ffxFsr3UpscalerGetRenderResolutionFromQualityMode_Dx12);
         }
 
-        auto detourResult = DetourTransactionCommit();
-        if (detourResult != NO_ERROR)
+        auto detourResult = HookBackend::Commit();
+        if (FAILED(detourResult))
         {
             LOG_ERROR("DetourTransactionCommit failed: {:X}", detourResult);
             o_ffxFSR3GetInterfaceDX12 = nullptr;
@@ -925,8 +923,7 @@ void HookFSR3Dx12Inputs(HMODULE module)
 
     if (module != nullptr)
     {
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
+        HookBackend::Begin();
 
         if (o_ffxFSR3GetInterfaceDX12 == nullptr)
         {
@@ -934,13 +931,13 @@ void HookFSR3Dx12Inputs(HMODULE module)
                 (PFN_ffxFSR3GetInterfaceDX12) KernelBaseProxy::GetProcAddress_()(module, "ffxGetInterfaceDX12");
 
             if (o_ffxFSR3GetInterfaceDX12 != nullptr)
-                DetourAttach(&(PVOID&) o_ffxFSR3GetInterfaceDX12, hk_ffxFsr3GetInterfaceDX12);
+                HookBackend::Attach(&(PVOID&) o_ffxFSR3GetInterfaceDX12, hk_ffxFsr3GetInterfaceDX12);
 
             LOG_DEBUG("ffxGetInterfaceDX12: {:X}", (size_t) o_ffxFSR3GetInterfaceDX12);
         }
 
-        auto detourResult = DetourTransactionCommit();
-        if (detourResult != NO_ERROR)
+        auto detourResult = HookBackend::Commit();
+        if (FAILED(detourResult))
         {
             LOG_ERROR("DetourTransactionCommit failed: {:X}", detourResult);
             o_ffxFSR3GetInterfaceDX12 = nullptr;

@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "menu_common.h"
 #include <inputs/FG/XeFG_Inputs_Dx12.h>
+#include <inputs/Bg3Fsr2_Vk.h>
 
 #include "input/input_system.h"
 
@@ -747,6 +748,8 @@ void MenuCommon::RenderUpscalerCombo(const API api, Upscaler currentUpscaler, co
 
     for (auto opt : options)
     {
+        if (api == API::Vulkan && Bg3Fsr2::ReplacementEnabled() && IsOn12(opt))
+            continue;
         // Check if GPU is capable of a given backend
         if ((opt == Upscaler::DLSS || opt == Upscaler::DLSS_on12) && !primaryGpu.dlssCapable)
             continue;

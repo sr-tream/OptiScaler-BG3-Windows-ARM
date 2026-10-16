@@ -14,7 +14,7 @@
 #include <misc/IdentifyGpu.h>
 
 #include <magic_enum.hpp>
-#include <detours/detours.h>
+#include <hooks/HookBackend.h>
 #include <imgui/ImGuiNotify.hpp>
 
 // Used Nukem's VKToDX as a base

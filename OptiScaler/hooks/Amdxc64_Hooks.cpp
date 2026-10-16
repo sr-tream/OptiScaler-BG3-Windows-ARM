@@ -117,12 +117,11 @@ void Amdxc64Hooks::Init()
         if (o_AmdExtD3DCreateInterface != nullptr)
         {
             LOG_DEBUG("Hooking AmdExtD3DCreateInterface");
-            DetourTransactionBegin();
-            DetourUpdateThread(GetCurrentThread());
-            DetourAttach(&(PVOID&) o_AmdExtD3DCreateInterface, hkAmdExtD3DCreateInterface);
+            HookBackend::Begin();
+            HookBackend::Attach(&(PVOID&) o_AmdExtD3DCreateInterface, hkAmdExtD3DCreateInterface);
 
-            auto detourResult = DetourTransactionCommit();
-            if (detourResult != NO_ERROR)
+            auto detourResult = HookBackend::Commit();
+            if (FAILED(detourResult))
             {
                 LOG_ERROR("Failed to attach detour: {:X}", detourResult);
                 o_AmdExtD3DCreateInterface = nullptr;

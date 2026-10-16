@@ -21,7 +21,7 @@
 #include "xess_vk.h"
 #include "xess_vk_debug.h"
 
-#include "detours/detours.h"
+#include <hooks/HookBackend.h>
 
 #pragma comment(lib, "Version.lib")
 
@@ -429,119 +429,118 @@ class XeSSProxy
         if (Config::Instance()->EnableXeSSInputs.value_or_default() && _module_hooked.dll != nullptr &&
             _module_hooked.xessD3D12CreateContext != nullptr && !_module_hooked.hooked)
         {
-            DetourTransactionBegin();
-            DetourUpdateThread(GetCurrentThread());
+            HookBackend::Begin();
 
             if (_module_hooked.xessD3D12CreateContext != nullptr)
-                DetourAttach(&(PVOID&) _module_hooked.xessD3D12CreateContext, hk_xessD3D12CreateContext);
+                HookBackend::Attach(&(PVOID&) _module_hooked.xessD3D12CreateContext, hk_xessD3D12CreateContext);
 
             if (_module_hooked.xessD3D12BuildPipelines != nullptr)
-                DetourAttach(&(PVOID&) _module_hooked.xessD3D12BuildPipelines, hk_xessD3D12BuildPipelines);
+                HookBackend::Attach(&(PVOID&) _module_hooked.xessD3D12BuildPipelines, hk_xessD3D12BuildPipelines);
 
             if (_module_hooked.xessD3D12Init != nullptr)
-                DetourAttach(&(PVOID&) _module_hooked.xessD3D12Init, hk_xessD3D12Init);
+                HookBackend::Attach(&(PVOID&) _module_hooked.xessD3D12Init, hk_xessD3D12Init);
 
             if (_module_hooked.xessGetVersion != nullptr)
-                DetourAttach(&(PVOID&) _module_hooked.xessGetVersion, hk_xessGetVersion);
+                HookBackend::Attach(&(PVOID&) _module_hooked.xessGetVersion, hk_xessGetVersion);
 
             if (_module_hooked.xessD3D12Execute != nullptr)
-                DetourAttach(&(PVOID&) _module_hooked.xessD3D12Execute, hk_xessD3D12Execute);
+                HookBackend::Attach(&(PVOID&) _module_hooked.xessD3D12Execute, hk_xessD3D12Execute);
 
             if (_module_hooked.xessSelectNetworkModel != nullptr)
-                DetourAttach(&(PVOID&) _module_hooked.xessSelectNetworkModel, hk_xessSelectNetworkModel);
+                HookBackend::Attach(&(PVOID&) _module_hooked.xessSelectNetworkModel, hk_xessSelectNetworkModel);
 
             if (_module_hooked.xessStartDump != nullptr)
-                DetourAttach(&(PVOID&) _module_hooked.xessStartDump, hk_xessStartDump);
+                HookBackend::Attach(&(PVOID&) _module_hooked.xessStartDump, hk_xessStartDump);
 
             if (_module_hooked.xessIsOptimalDriver != nullptr)
-                DetourAttach(&(PVOID&) _module_hooked.xessIsOptimalDriver, hk_xessIsOptimalDriver);
+                HookBackend::Attach(&(PVOID&) _module_hooked.xessIsOptimalDriver, hk_xessIsOptimalDriver);
 
             if (_module_hooked.xessSetLoggingCallback != nullptr)
-                DetourAttach(&(PVOID&) _module_hooked.xessSetLoggingCallback, hk_xessSetLoggingCallback);
+                HookBackend::Attach(&(PVOID&) _module_hooked.xessSetLoggingCallback, hk_xessSetLoggingCallback);
 
             if (_module_hooked.xessGetProperties != nullptr)
-                DetourAttach(&(PVOID&) _module_hooked.xessGetProperties, hk_xessGetProperties);
+                HookBackend::Attach(&(PVOID&) _module_hooked.xessGetProperties, hk_xessGetProperties);
 
             if (_module_hooked.xessDestroyContext != nullptr)
-                DetourAttach(&(PVOID&) _module_hooked.xessDestroyContext, hk_xessDestroyContext);
+                HookBackend::Attach(&(PVOID&) _module_hooked.xessDestroyContext, hk_xessDestroyContext);
 
             if (_module_hooked.xessSetVelocityScale != nullptr)
-                DetourAttach(&(PVOID&) _module_hooked.xessSetVelocityScale, hk_xessSetVelocityScale);
+                HookBackend::Attach(&(PVOID&) _module_hooked.xessSetVelocityScale, hk_xessSetVelocityScale);
 
             if (_module_hooked.xessD3D12GetInitParams != nullptr)
-                DetourAttach(&(PVOID&) _module_hooked.xessD3D12GetInitParams, hk_xessD3D12GetInitParams);
+                HookBackend::Attach(&(PVOID&) _module_hooked.xessD3D12GetInitParams, hk_xessD3D12GetInitParams);
 
             if (_module_hooked.xessForceLegacyScaleFactors != nullptr)
-                DetourAttach(&(PVOID&) _module_hooked.xessForceLegacyScaleFactors, hk_xessForceLegacyScaleFactors);
+                HookBackend::Attach(&(PVOID&) _module_hooked.xessForceLegacyScaleFactors, hk_xessForceLegacyScaleFactors);
 
             if (_module_hooked.xessGetExposureMultiplier != nullptr)
-                DetourAttach(&(PVOID&) _module_hooked.xessGetExposureMultiplier, hk_xessGetExposureMultiplier);
+                HookBackend::Attach(&(PVOID&) _module_hooked.xessGetExposureMultiplier, hk_xessGetExposureMultiplier);
 
             if (_module_hooked.xessGetInputResolution != nullptr)
-                DetourAttach(&(PVOID&) _module_hooked.xessGetInputResolution, hk_xessGetInputResolution);
+                HookBackend::Attach(&(PVOID&) _module_hooked.xessGetInputResolution, hk_xessGetInputResolution);
 
             if (_module_hooked.xessGetIntelXeFXVersion != nullptr)
-                DetourAttach(&(PVOID&) _module_hooked.xessGetIntelXeFXVersion, hk_xessGetIntelXeFXVersion);
+                HookBackend::Attach(&(PVOID&) _module_hooked.xessGetIntelXeFXVersion, hk_xessGetIntelXeFXVersion);
 
             if (_module_hooked.xessGetJitterScale != nullptr)
-                DetourAttach(&(PVOID&) _module_hooked.xessGetJitterScale, hk_xessGetJitterScale);
+                HookBackend::Attach(&(PVOID&) _module_hooked.xessGetJitterScale, hk_xessGetJitterScale);
 
             if (_module_hooked.xessGetVelocityScale != nullptr)
-                DetourAttach(&(PVOID&) _module_hooked.xessGetVelocityScale, hk_xessGetVelocityScale);
+                HookBackend::Attach(&(PVOID&) _module_hooked.xessGetVelocityScale, hk_xessGetVelocityScale);
 
             if (_module_hooked.xessGetOptimalInputResolution != nullptr)
-                DetourAttach(&(PVOID&) _module_hooked.xessGetOptimalInputResolution, hk_xessGetOptimalInputResolution);
+                HookBackend::Attach(&(PVOID&) _module_hooked.xessGetOptimalInputResolution, hk_xessGetOptimalInputResolution);
 
             if (_module_hooked.xessSetExposureMultiplier != nullptr)
-                DetourAttach(&(PVOID&) _module_hooked.xessSetExposureMultiplier, hk_xessSetExposureMultiplier);
+                HookBackend::Attach(&(PVOID&) _module_hooked.xessSetExposureMultiplier, hk_xessSetExposureMultiplier);
 
             if (_module_hooked.xessSetJitterScale != nullptr)
-                DetourAttach(&(PVOID&) _module_hooked.xessSetJitterScale, hk_xessSetJitterScale);
+                HookBackend::Attach(&(PVOID&) _module_hooked.xessSetJitterScale, hk_xessSetJitterScale);
 
             if (_module_hooked.xessD3D12GetResourcesToDump != nullptr)
-                DetourAttach(&(PVOID&) _module_hooked.xessD3D12GetResourcesToDump, hk_xessD3D12GetResourcesToDump);
+                HookBackend::Attach(&(PVOID&) _module_hooked.xessD3D12GetResourcesToDump, hk_xessD3D12GetResourcesToDump);
 
             if (_module_hooked.xessD3D12GetProfilingData != nullptr)
-                DetourAttach(&(PVOID&) _module_hooked.xessD3D12GetProfilingData, hk_xessD3D12GetProfilingData);
+                HookBackend::Attach(&(PVOID&) _module_hooked.xessD3D12GetProfilingData, hk_xessD3D12GetProfilingData);
 
             if (_module_hooked.xessSetContextParameterF != nullptr)
-                DetourAttach(&(PVOID&) _module_hooked.xessSetContextParameterF, hk_xessSetContextParameterF);
+                HookBackend::Attach(&(PVOID&) _module_hooked.xessSetContextParameterF, hk_xessSetContextParameterF);
 
             if (_module_hooked.xessVKCreateContext != nullptr)
-                DetourAttach(&(PVOID&) _module_hooked.xessVKCreateContext, hk_xessVKCreateContext);
+                HookBackend::Attach(&(PVOID&) _module_hooked.xessVKCreateContext, hk_xessVKCreateContext);
 
             if (_module_hooked.xessVKBuildPipelines != nullptr)
-                DetourAttach(&(PVOID&) _module_hooked.xessVKBuildPipelines, hk_xessVKBuildPipelines);
+                HookBackend::Attach(&(PVOID&) _module_hooked.xessVKBuildPipelines, hk_xessVKBuildPipelines);
 
             if (_module_hooked.xessVKInit != nullptr)
-                DetourAttach(&(PVOID&) _module_hooked.xessVKInit, hk_xessVKInit);
+                HookBackend::Attach(&(PVOID&) _module_hooked.xessVKInit, hk_xessVKInit);
 
             if (_module_hooked.xessVKGetInitParams != nullptr)
-                DetourAttach(&(PVOID&) _module_hooked.xessVKGetInitParams, hk_xessVKGetInitParams);
+                HookBackend::Attach(&(PVOID&) _module_hooked.xessVKGetInitParams, hk_xessVKGetInitParams);
 
             if (_module_hooked.xessVKExecute != nullptr)
-                DetourAttach(&(PVOID&) _module_hooked.xessVKExecute, hk_xessVKExecute);
+                HookBackend::Attach(&(PVOID&) _module_hooked.xessVKExecute, hk_xessVKExecute);
 
             if (_module_hooked.xessVKGetResourcesToDump != nullptr)
-                DetourAttach(&(PVOID&) _module_hooked.xessVKGetResourcesToDump, hk_xessVKGetResourcesToDump);
+                HookBackend::Attach(&(PVOID&) _module_hooked.xessVKGetResourcesToDump, hk_xessVKGetResourcesToDump);
 
             if (_module_hooked.xessVKGetRequiredDeviceExtensions != nullptr)
-                DetourAttach(&(PVOID&) _module_hooked.xessVKGetRequiredDeviceExtensions,
+                HookBackend::Attach(&(PVOID&) _module_hooked.xessVKGetRequiredDeviceExtensions,
                              hk_xessVKGetRequiredDeviceExtensions);
 
             if (_module_hooked.xessVKGetRequiredDeviceFeatures != nullptr)
-                DetourAttach(&(PVOID&) _module_hooked.xessVKGetRequiredDeviceFeatures,
+                HookBackend::Attach(&(PVOID&) _module_hooked.xessVKGetRequiredDeviceFeatures,
                              hk_xessVKGetRequiredDeviceFeatures);
 
             if (_module_hooked.xessVKGetRequiredInstanceExtensions != nullptr)
-                DetourAttach(&(PVOID&) _module_hooked.xessVKGetRequiredInstanceExtensions,
+                HookBackend::Attach(&(PVOID&) _module_hooked.xessVKGetRequiredInstanceExtensions,
                              hk_xessVKGetRequiredInstanceExtensions);
 
             if (_module_hooked.xessGetPipelineBuildStatus != nullptr)
-                DetourAttach(&(PVOID&) _module_hooked.xessGetPipelineBuildStatus, hk_xessGetPipelineBuildStatus);
+                HookBackend::Attach(&(PVOID&) _module_hooked.xessGetPipelineBuildStatus, hk_xessGetPipelineBuildStatus);
 
-            auto detourResult = DetourTransactionCommit();
-            if (detourResult != NO_ERROR)
+            auto detourResult = HookBackend::Commit();
+            if (FAILED(detourResult))
             {
                 LOG_ERROR("Failed to commit detours: {:X}", detourResult);
                 _module_hooked.xessD3D12CreateContext = nullptr;
@@ -779,82 +778,81 @@ class XeSSProxy
         if (Config::Instance()->EnableXeSSInputs.value_or_default() && _module11_hooked.dll != nullptr &&
             _module11_hooked.xessD3D11CreateContext != nullptr && !_module11_hooked.hooked)
         {
-            DetourTransactionBegin();
-            DetourUpdateThread(GetCurrentThread());
+            HookBackend::Begin();
 
             if (_module11_hooked.xessD3D11CreateContext != nullptr)
-                DetourAttach(&(PVOID&) _module11_hooked.xessD3D11CreateContext, hk_xessD3D11CreateContext);
+                HookBackend::Attach(&(PVOID&) _module11_hooked.xessD3D11CreateContext, hk_xessD3D11CreateContext);
 
             if (_module11_hooked.xessD3D11Execute != nullptr)
-                DetourAttach(&(PVOID&) _module11_hooked.xessD3D11Execute, hk_xessD3D11Execute);
+                HookBackend::Attach(&(PVOID&) _module11_hooked.xessD3D11Execute, hk_xessD3D11Execute);
 
             if (_module11_hooked.xessD3D11GetInitParams != nullptr)
-                DetourAttach(&(PVOID&) _module11_hooked.xessD3D11GetInitParams, hk_xessD3D11GetInitParams);
+                HookBackend::Attach(&(PVOID&) _module11_hooked.xessD3D11GetInitParams, hk_xessD3D11GetInitParams);
 
             if (_module11_hooked.xessD3D11Init != nullptr)
-                DetourAttach(&(PVOID&) _module11_hooked.xessD3D11Init, hk_xessD3D11Init);
+                HookBackend::Attach(&(PVOID&) _module11_hooked.xessD3D11Init, hk_xessD3D11Init);
 
             if (_module11_hooked.xessDestroyContextDx11 != nullptr)
-                DetourAttach(&(PVOID&) _module11_hooked.xessDestroyContextDx11, hk_xessDestroyContext);
+                HookBackend::Attach(&(PVOID&) _module11_hooked.xessDestroyContextDx11, hk_xessDestroyContext);
 
             if (_module11_hooked.xessForceLegacyScaleFactorsDx11 != nullptr)
-                DetourAttach(&(PVOID&) _module11_hooked.xessForceLegacyScaleFactorsDx11,
+                HookBackend::Attach(&(PVOID&) _module11_hooked.xessForceLegacyScaleFactorsDx11,
                              hk_xessForceLegacyScaleFactors);
 
             if (_module11_hooked.xessGetExposureMultiplierDx11 != nullptr)
-                DetourAttach(&(PVOID&) _module11_hooked.xessGetExposureMultiplierDx11, hk_xessGetExposureMultiplier);
+                HookBackend::Attach(&(PVOID&) _module11_hooked.xessGetExposureMultiplierDx11, hk_xessGetExposureMultiplier);
 
             if (_module11_hooked.xessGetInputResolutionDx11 != nullptr)
-                DetourAttach(&(PVOID&) _module11_hooked.xessGetInputResolutionDx11, hk_xessGetInputResolution);
+                HookBackend::Attach(&(PVOID&) _module11_hooked.xessGetInputResolutionDx11, hk_xessGetInputResolution);
 
             if (_module11_hooked.xessGetIntelXeFXVersionDx11 != nullptr)
-                DetourAttach(&(PVOID&) _module11_hooked.xessGetIntelXeFXVersionDx11, hk_xessGetIntelXeFXVersion);
+                HookBackend::Attach(&(PVOID&) _module11_hooked.xessGetIntelXeFXVersionDx11, hk_xessGetIntelXeFXVersion);
 
             if (_module11_hooked.xessGetJitterScaleDx11 != nullptr)
-                DetourAttach(&(PVOID&) _module11_hooked.xessGetJitterScaleDx11, hk_xessGetJitterScale);
+                HookBackend::Attach(&(PVOID&) _module11_hooked.xessGetJitterScaleDx11, hk_xessGetJitterScale);
 
             if (_module11_hooked.xessGetOptimalInputResolutionDx11 != nullptr)
-                DetourAttach(&(PVOID&) _module11_hooked.xessGetOptimalInputResolutionDx11,
+                HookBackend::Attach(&(PVOID&) _module11_hooked.xessGetOptimalInputResolutionDx11,
                              hk_xessGetOptimalInputResolution);
 
             if (_module11_hooked.xessGetPipelineBuildStatusDx11 != nullptr)
-                DetourAttach(&(PVOID&) _module11_hooked.xessGetPipelineBuildStatusDx11, hk_xessGetPipelineBuildStatus);
+                HookBackend::Attach(&(PVOID&) _module11_hooked.xessGetPipelineBuildStatusDx11, hk_xessGetPipelineBuildStatus);
 
             if (_module11_hooked.xessGetPropertiesDx11 != nullptr)
-                DetourAttach(&(PVOID&) _module11_hooked.xessGetPropertiesDx11, hk_xessGetProperties);
+                HookBackend::Attach(&(PVOID&) _module11_hooked.xessGetPropertiesDx11, hk_xessGetProperties);
 
             if (_module11_hooked.xessGetVelocityScaleDx11 != nullptr)
-                DetourAttach(&(PVOID&) _module11_hooked.xessGetVelocityScaleDx11, hk_xessGetVelocityScale);
+                HookBackend::Attach(&(PVOID&) _module11_hooked.xessGetVelocityScaleDx11, hk_xessGetVelocityScale);
 
             if (_module11_hooked.xessGetVersionDx11 != nullptr)
-                DetourAttach(&(PVOID&) _module11_hooked.xessGetVersionDx11, hk_xessGetVersionDx11);
+                HookBackend::Attach(&(PVOID&) _module11_hooked.xessGetVersionDx11, hk_xessGetVersionDx11);
 
             if (_module11_hooked.xessIsOptimalDriverDx11 != nullptr)
-                DetourAttach(&(PVOID&) _module11_hooked.xessIsOptimalDriverDx11, hk_xessIsOptimalDriver);
+                HookBackend::Attach(&(PVOID&) _module11_hooked.xessIsOptimalDriverDx11, hk_xessIsOptimalDriver);
 
             if (_module11_hooked.xessSelectNetworkModelDx11 != nullptr)
-                DetourAttach(&(PVOID&) _module11_hooked.xessSelectNetworkModelDx11, hk_xessSelectNetworkModel);
+                HookBackend::Attach(&(PVOID&) _module11_hooked.xessSelectNetworkModelDx11, hk_xessSelectNetworkModel);
 
             if (_module11_hooked.xessSetContextParameterFDx11 != nullptr)
-                DetourAttach(&(PVOID&) _module11_hooked.xessSetContextParameterFDx11, hk_xessSetContextParameterF);
+                HookBackend::Attach(&(PVOID&) _module11_hooked.xessSetContextParameterFDx11, hk_xessSetContextParameterF);
 
             if (_module11_hooked.xessSetExposureMultiplierDx11 != nullptr)
-                DetourAttach(&(PVOID&) _module11_hooked.xessSetExposureMultiplierDx11, hk_xessSetExposureMultiplier);
+                HookBackend::Attach(&(PVOID&) _module11_hooked.xessSetExposureMultiplierDx11, hk_xessSetExposureMultiplier);
 
             if (_module11_hooked.xessSetJitterScaleDx11 != nullptr)
-                DetourAttach(&(PVOID&) _module11_hooked.xessSetJitterScaleDx11, hk_xessSetJitterScale);
+                HookBackend::Attach(&(PVOID&) _module11_hooked.xessSetJitterScaleDx11, hk_xessSetJitterScale);
 
             if (_module11_hooked.xessSetLoggingCallbackDx11 != nullptr)
-                DetourAttach(&(PVOID&) _module11_hooked.xessSetLoggingCallbackDx11, hk_xessSetLoggingCallback);
+                HookBackend::Attach(&(PVOID&) _module11_hooked.xessSetLoggingCallbackDx11, hk_xessSetLoggingCallback);
 
             if (_module11_hooked.xessSetVelocityScaleDx11 != nullptr)
-                DetourAttach(&(PVOID&) _module11_hooked.xessSetVelocityScaleDx11, hk_xessSetVelocityScale);
+                HookBackend::Attach(&(PVOID&) _module11_hooked.xessSetVelocityScaleDx11, hk_xessSetVelocityScale);
 
             if (_module11_hooked.xessStartDumpDx11 != nullptr)
-                DetourAttach(&(PVOID&) _module11_hooked.xessStartDumpDx11, hk_xessStartDump);
+                HookBackend::Attach(&(PVOID&) _module11_hooked.xessStartDumpDx11, hk_xessStartDump);
 
-            auto detourResult = DetourTransactionCommit();
-            if (detourResult != NO_ERROR)
+            auto detourResult = HookBackend::Commit();
+            if (FAILED(detourResult))
             {
                 LOG_ERROR("Failed to commit detours: {:X}", detourResult);
                 _module11_hooked.xessD3D11CreateContext = nullptr;

@@ -1,6 +1,6 @@
 #pragma once
 #include <windows.h>
-#include <detours/detours.h>
+#include <hooks/HookBackend.h>
 #include <thread>
 #include <atomic>
 #include <chrono>
@@ -48,14 +48,12 @@ class RawInputHook
         isRunning = true;
 
         // Start Detours hooking
-        DetourRestoreAfterWith();
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
+        HookBackend::Begin();
 
-        DetourAttach(&(PVOID&) o_GetRawInputData, hkGetRawInputData);
-        DetourAttach(&(PVOID&) o_RegisterRawInputDevices, hkRegisterRawInputDevices);
+        HookBackend::Attach(&(PVOID&) o_GetRawInputData, hkGetRawInputData);
+        HookBackend::Attach(&(PVOID&) o_RegisterRawInputDevices, hkRegisterRawInputDevices);
 
-        DetourTransactionCommit();
+        HookBackend::Commit();
 
         // Launch the background polling/message thread
         pollThread = std::thread(&RawInputHook::PollingThreadLoop, this);
@@ -77,13 +75,12 @@ class RawInputHook
             pollThread.join();
         }
 
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
+        HookBackend::Begin();
 
-        DetourDetach(&(PVOID&) o_GetRawInputData, hkGetRawInputData);
-        DetourDetach(&(PVOID&) o_RegisterRawInputDevices, hkRegisterRawInputDevices);
+        HookBackend::Detach(&(PVOID&) o_GetRawInputData, hkGetRawInputData);
+        HookBackend::Detach(&(PVOID&) o_RegisterRawInputDevices, hkRegisterRawInputDevices);
 
-        DetourTransactionCommit();
+        HookBackend::Commit();
     }
 
   private:

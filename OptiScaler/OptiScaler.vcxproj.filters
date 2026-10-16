@@ -80,7 +80,7 @@
     <ClInclude Include="upscalers\fsr2_212\FSR2Feature_Vk_212.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="detours\detours.h">
+    <ClInclude Include="hooks\HookBackend.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Logger.h">
@@ -621,6 +621,18 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="inputs\FSR2_Vk.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inputs\Bg3Fsr2_Vk.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inputs\Bg3Fsr2_Bridge.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inputs\Bg3VulkanLifetime.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inputs\Bg3VulkanCommands.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="inputs\XeSS_Dx11.h">
@@ -1431,6 +1443,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="inputs\FSR2_Vk.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="inputs\Bg3Fsr2_Vk.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="inputs\Bg3Fsr2_Bridge.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="inputs\XeSS_Dx11.cpp">

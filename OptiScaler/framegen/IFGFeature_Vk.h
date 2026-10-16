@@ -105,6 +105,8 @@ class IFGFeature_Vk : public virtual IFGFeature
     virtual void SetHdrMetadata(VkDevice device, VkSwapchainKHR swapchain, const VkHdrMetadataEXT* pMetadata) = 0;
 
     virtual void EvaluateState(FG_Constants& fgConstants) = 0;
+    // Native render interception must not wait for a presenter which can itself await the game.
+    virtual bool TryEvaluateState(FG_Constants& fgConstants) { return false; }
 
     bool SetResource(VkFGResource* inputResource);
     bool HasResource(FG_ResourceType type, int index = -1) override final;

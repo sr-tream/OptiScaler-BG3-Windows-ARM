@@ -10,7 +10,7 @@
 
 #include <resource_tracking/ResTrack_dx11.h>
 
-#include <detours/detours.h>
+#include <hooks/HookBackend.h>
 
 #include <d3d11_4.h>
 #include <d3d11on12.h>
@@ -107,17 +107,16 @@ static void HookToDeviceLocal(ID3D11Device* InDevice)
     // Apply the detour
     if (o_CreateSamplerState != nullptr || o_D3D11DeviceRelease != nullptr)
     {
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
+        HookBackend::Begin();
 
         if (o_D3D11DeviceRelease != nullptr)
-            DetourAttach(&(PVOID&) o_D3D11DeviceRelease, hkD3D11DeviceRelease);
+            HookBackend::Attach(&(PVOID&) o_D3D11DeviceRelease, hkD3D11DeviceRelease);
 
         if (o_CreateSamplerState != nullptr)
-            DetourAttach(&(PVOID&) o_CreateSamplerState, hkCreateSamplerState);
+            HookBackend::Attach(&(PVOID&) o_CreateSamplerState, hkCreateSamplerState);
 
-        auto detourResult = DetourTransactionCommit();
-        if (detourResult != NO_ERROR)
+        auto detourResult = HookBackend::Commit();
+        if (FAILED(detourResult))
         {
             LOG_ERROR("Failed to hook ID3D11Device: {:X}", detourResult);
             o_CreateSamplerState = nullptr;
@@ -545,20 +544,19 @@ void D3D11Hooks::Hook(HMODULE dx11Module)
     {
         LOG_DEBUG("Hooking D3D11CreateDevice methods");
 
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
+        HookBackend::Begin();
 
         if (o_D3D11CreateDevice != nullptr)
-            DetourAttach(&(PVOID&) o_D3D11CreateDevice, hkD3D11CreateDevice);
+            HookBackend::Attach(&(PVOID&) o_D3D11CreateDevice, hkD3D11CreateDevice);
 
         if (o_D3D11On12CreateDevice != nullptr)
-            DetourAttach(&(PVOID&) o_D3D11On12CreateDevice, hkD3D11On12CreateDevice);
+            HookBackend::Attach(&(PVOID&) o_D3D11On12CreateDevice, hkD3D11On12CreateDevice);
 
         if (o_D3D11CreateDeviceAndSwapChain != nullptr)
-            DetourAttach(&(PVOID&) o_D3D11CreateDeviceAndSwapChain, hkD3D11CreateDeviceAndSwapChain);
+            HookBackend::Attach(&(PVOID&) o_D3D11CreateDeviceAndSwapChain, hkD3D11CreateDeviceAndSwapChain);
 
-        auto detourResult = DetourTransactionCommit();
-        if (detourResult != NO_ERROR)
+        auto detourResult = HookBackend::Commit();
+        if (FAILED(detourResult))
         {
             LOG_ERROR("Failed to hook ID3D11Device: {:X}", detourResult);
             o_D3D11CreateDevice = nullptr;
@@ -572,26 +570,25 @@ void D3D11Hooks::Unhook()
 {
     ResTrack_Dx11::ReleaseHooks();
 
-    DetourTransactionBegin();
-    DetourUpdateThread(GetCurrentThread());
+    HookBackend::Begin();
 
     if (o_D3D11CreateDevice != nullptr)
-        DetourDetach(&(PVOID&) o_D3D11CreateDevice, hkD3D11CreateDevice);
+        HookBackend::Detach(&(PVOID&) o_D3D11CreateDevice, hkD3D11CreateDevice);
 
     if (o_D3D11DeviceRelease != nullptr)
-        DetourDetach(&(PVOID&) o_D3D11DeviceRelease, hkD3D11DeviceRelease);
+        HookBackend::Detach(&(PVOID&) o_D3D11DeviceRelease, hkD3D11DeviceRelease);
 
     if (o_D3D11On12CreateDevice != nullptr)
-        DetourDetach(&(PVOID&) o_D3D11On12CreateDevice, hkD3D11On12CreateDevice);
+        HookBackend::Detach(&(PVOID&) o_D3D11On12CreateDevice, hkD3D11On12CreateDevice);
 
     if (o_D3D11CreateDeviceAndSwapChain != nullptr)
-        DetourDetach(&(PVOID&) o_D3D11CreateDeviceAndSwapChain, hkD3D11CreateDeviceAndSwapChain);
+        HookBackend::Detach(&(PVOID&) o_D3D11CreateDeviceAndSwapChain, hkD3D11CreateDeviceAndSwapChain);
 
     if (o_CreateSamplerState != nullptr)
-        DetourDetach(&(PVOID&) o_CreateSamplerState, hkCreateSamplerState);
+        HookBackend::Detach(&(PVOID&) o_CreateSamplerState, hkCreateSamplerState);
 
-    auto detourResult = DetourTransactionCommit();
-    if (detourResult != NO_ERROR)
+    auto detourResult = HookBackend::Commit();
+    if (FAILED(detourResult))
     {
         LOG_ERROR("Failed to unhook ID3D11Device: {:X}", detourResult);
     }

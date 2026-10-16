@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "XeFG_Inputs_Dx12.h"
 #include <proxies/XeLL_Proxy.h>
-#include <detours/detours.h>
+#include <hooks/HookBackend.h>
 
 #include <intrin.h>
 
@@ -633,18 +633,17 @@ xefg_swapchain_result_t XeFGInputs::Destroy(xefg_swapchain_handle_t)
 
 template <size_t N> bool XeFGInputs::Attach(HMODULE module, HookEntry (&hooks)[N])
 {
-    DetourTransactionBegin();
-    DetourUpdateThread(GetCurrentThread());
+    HookBackend::Begin();
 
     for (auto& hook : hooks)
     {
         hook.target = (PVOID) KernelBaseProxy::GetProcAddress_()(module, hook.name);
 
         if (hook.target != nullptr)
-            DetourAttach(&hook.target, hook.function);
+            HookBackend::Attach(&hook.target, hook.function);
     }
 
-    return DetourTransactionCommit() == NO_ERROR;
+    return SUCCEEDED(HookBackend::Commit());
 }
 
 // XeFG reads the XeLL context directly, it needs the real one behind it
@@ -687,7 +686,7 @@ BOOL CALLBACK XeFGInputs::RedirectExport(PVOID library, ULONG, LPCSTR name, PVOI
     if (replacement != nullptr && _redirectCount < std::size(_redirects))
     {
         _redirects[_redirectCount] = target;
-        DetourAttach(&_redirects[_redirectCount++], replacement);
+        HookBackend::Attach(&_redirects[_redirectCount++], replacement);
     }
 
     return TRUE;
@@ -695,19 +694,22 @@ BOOL CALLBACK XeFGInputs::RedirectExport(PVOID library, ULONG, LPCSTR name, PVOI
 
 bool XeFGInputs::Redirect(HMODULE from, HMODULE to)
 {
-    DetourTransactionBegin();
-    DetourUpdateThread(GetCurrentThread());
+    HookBackend::Begin();
     _redirectIncomplete = false;
-    DetourEnumerateExports(from, to, RedirectExport);
+    if (!HookBackend::EnumerateExports(from, to, RedirectExport))
+    {
+        HookBackend::Abort();
+        return false;
+    }
 
     if (_redirectIncomplete)
     {
         LOG_WARN("OptiScaler's library is missing exports of the game's, not redirecting");
-        DetourTransactionAbort();
+        HookBackend::Abort();
         return false;
     }
 
-    return DetourTransactionCommit() == NO_ERROR;
+    return SUCCEEDED(HookBackend::Commit());
 }
 
 bool XeFGInputs::Passthrough()

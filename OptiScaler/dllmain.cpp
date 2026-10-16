@@ -148,12 +148,11 @@ static void RunAgilityUpgrade(HMODULE dx12Module)
         return S_OK;
     };
 
-    DetourTransactionBegin();
-    DetourUpdateThread(GetCurrentThread());
-    DetourAttach(&(PVOID&) o_IsDeveloperModeEnabled, static_cast<HRESULT (*)(BOOL*)>(hk_IsDeveloperModeEnabled));
-    auto detourResult = DetourTransactionCommit();
+    HookBackend::Begin();
+    HookBackend::Attach(&(PVOID&) o_IsDeveloperModeEnabled, static_cast<HRESULT (*)(BOOL*)>(hk_IsDeveloperModeEnabled));
+    auto detourResult = HookBackend::Commit();
 
-    if (detourResult != NO_ERROR)
+    if (FAILED(detourResult))
     {
         LOG_ERROR("Failed to attach detour: {:X}", detourResult);
         return;
@@ -199,12 +198,11 @@ static void RunAgilityUpgrade(HMODULE dx12Module)
         }
     }
 
-    DetourTransactionBegin();
-    DetourUpdateThread(GetCurrentThread());
-    DetourDetach(&(PVOID&) o_IsDeveloperModeEnabled, static_cast<HRESULT (*)(BOOL*)>(hk_IsDeveloperModeEnabled));
-    detourResult = DetourTransactionCommit();
+    HookBackend::Begin();
+    HookBackend::Detach(&(PVOID&) o_IsDeveloperModeEnabled, static_cast<HRESULT (*)(BOOL*)>(hk_IsDeveloperModeEnabled));
+    detourResult = HookBackend::Commit();
 
-    if (detourResult != NO_ERROR)
+    if (FAILED(detourResult))
     {
         LOG_ERROR("Failed to detach detour: {:X}", detourResult);
         return;
@@ -441,8 +439,7 @@ static void CheckWorkingMode()
                 dllNamesW.push_back(L"version.dll");
                 dllNamesW.push_back(L"version");
 
-                shared.LoadOriginalLibrary(originalModule);
-                version.LoadOriginalLibrary(originalModule);
+                InitializeExportProxy(ExportProxy::Version, originalModule);
 
                 modeFound = true;
             }
@@ -495,8 +492,7 @@ static void CheckWorkingMode()
                 dllNamesW.push_back(L"winmm.dll");
                 dllNamesW.push_back(L"winmm");
 
-                shared.LoadOriginalLibrary(originalModule);
-                winmm.LoadOriginalLibrary(originalModule);
+                InitializeExportProxy(ExportProxy::WinMM, originalModule);
                 modeFound = true;
             }
             else
@@ -548,8 +544,7 @@ static void CheckWorkingMode()
                 dllNamesW.push_back(L"wininet.dll");
                 dllNamesW.push_back(L"wininet");
 
-                shared.LoadOriginalLibrary(originalModule);
-                wininet.LoadOriginalLibrary(originalModule);
+                InitializeExportProxy(ExportProxy::WinINet, originalModule);
                 modeFound = true;
             }
             else
@@ -601,8 +596,7 @@ static void CheckWorkingMode()
                 dllNamesW.push_back(L"dbghelp.dll");
                 dllNamesW.push_back(L"dbghelp");
 
-                shared.LoadOriginalLibrary(originalModule);
-                dbghelp.LoadOriginalLibrary(originalModule);
+                InitializeExportProxy(ExportProxy::DbgHelp, originalModule);
                 modeFound = true;
             }
             else
@@ -690,8 +684,7 @@ static void CheckWorkingMode()
                 dllNamesW.push_back(L"winhttp.dll");
                 dllNamesW.push_back(L"winhttp");
 
-                shared.LoadOriginalLibrary(originalModule);
-                winhttp.LoadOriginalLibrary(originalModule);
+                InitializeExportProxy(ExportProxy::WinHTTP, originalModule);
                 modeFound = true;
             }
             else
@@ -744,7 +737,7 @@ static void CheckWorkingMode()
                 dllNamesW.push_back(L"dxgi");
 
                 DxgiProxy::Init(originalModule);
-                dxgi.LoadOriginalLibrary(originalModule);
+                InitializeExportProxy(ExportProxy::DXGI, originalModule);
 
                 State::Instance().workingMode = WorkingMode::Dxgi;
                 modeFound = true;
@@ -804,7 +797,7 @@ static void CheckWorkingMode()
                 dllNamesW.push_back(L"d3d12");
 
                 D3d12Proxy::Init(originalModule);
-                d3d12.LoadOriginalLibrary(originalModule);
+                InitializeExportProxy(ExportProxy::D3D12, originalModule);
 
                 State::Instance().workingMode = WorkingMode::D3d12;
 

@@ -11,7 +11,7 @@
 #include <future>
 
 #include <d3dcommon.h>
-#include <detours/detours.h>
+#include <hooks/HookBackend.h>
 #include <magic_enum_utility.hpp>
 #include <include/d3dx/d3dx12.h>
 
@@ -776,11 +776,10 @@ HRESULT ResTrack_Dx12::hkCreateDescriptorHeap(ID3D12Device* This, D3D12_DESCRIPT
         {
             PVOID* vtbl = *(PVOID**) heap;
             o_HeapRelease = (PFN_HeapRelease) vtbl[2];
-            DetourTransactionBegin();
-            DetourUpdateThread(GetCurrentThread());
-            DetourAttach(&(PVOID&) o_HeapRelease, hkHeapRelease);
-            auto detourResult = DetourTransactionCommit();
-            if (detourResult != NO_ERROR)
+            HookBackend::Begin();
+            HookBackend::Attach(&(PVOID&) o_HeapRelease, hkHeapRelease);
+            auto detourResult = HookBackend::Commit();
+            if (FAILED(detourResult))
             {
                 LOG_ERROR("Failed to hook Heap Release: {:X}", detourResult);
                 o_HeapRelease = nullptr;
@@ -2512,38 +2511,37 @@ void ResTrack_Dx12::HookCommandList(ID3D12Device* InDevice)
 
             if (o_OMSetRenderTargets != nullptr)
             {
-                DetourTransactionBegin();
-                DetourUpdateThread(GetCurrentThread());
+                HookBackend::Begin();
 
                 // Only needed for hudfix
                 if (State::Instance().activeFgInput == FGInput::Upscaler)
                 {
                     if (o_Reset != nullptr)
-                        DetourAttach(&(PVOID&) o_Reset, hkReset);
+                        HookBackend::Attach(&(PVOID&) o_Reset, hkReset);
                     if (o_ClearState != nullptr)
-                        DetourAttach(&(PVOID&) o_ClearState, hkClearState);
+                        HookBackend::Attach(&(PVOID&) o_ClearState, hkClearState);
 
                     if (o_OMSetRenderTargets != nullptr)
-                        DetourAttach(&(PVOID&) o_OMSetRenderTargets, hkOMSetRenderTargets);
+                        HookBackend::Attach(&(PVOID&) o_OMSetRenderTargets, hkOMSetRenderTargets);
 
                     if (o_SetGraphicsRootDescriptorTable != nullptr)
-                        DetourAttach(&(PVOID&) o_SetGraphicsRootDescriptorTable, hkSetGraphicsRootDescriptorTable);
+                        HookBackend::Attach(&(PVOID&) o_SetGraphicsRootDescriptorTable, hkSetGraphicsRootDescriptorTable);
 
                     if (o_SetComputeRootDescriptorTable != nullptr)
-                        DetourAttach(&(PVOID&) o_SetComputeRootDescriptorTable, hkSetComputeRootDescriptorTable);
+                        HookBackend::Attach(&(PVOID&) o_SetComputeRootDescriptorTable, hkSetComputeRootDescriptorTable);
 
                     if (o_DrawIndexedInstanced != nullptr)
-                        DetourAttach(&(PVOID&) o_DrawIndexedInstanced, hkDrawIndexedInstanced);
+                        HookBackend::Attach(&(PVOID&) o_DrawIndexedInstanced, hkDrawIndexedInstanced);
 
                     if (o_DrawInstanced != nullptr)
-                        DetourAttach(&(PVOID&) o_DrawInstanced, hkDrawInstanced);
+                        HookBackend::Attach(&(PVOID&) o_DrawInstanced, hkDrawInstanced);
 
                     if (o_Dispatch != nullptr)
-                        DetourAttach(&(PVOID&) o_Dispatch, hkDispatch);
+                        HookBackend::Attach(&(PVOID&) o_Dispatch, hkDispatch);
                 }
 
-                auto detourResult = DetourTransactionCommit();
-                if (detourResult != NO_ERROR)
+                auto detourResult = HookBackend::Commit();
+                if (FAILED(detourResult))
                 {
                     LOG_ERROR("Failed to hook CommandList methods: {:X}", detourResult);
                     _bindingTrackingEnabled.store(false, std::memory_order_release);
@@ -2641,29 +2639,28 @@ void ResTrack_Dx12::HookDevice(ID3D12Device* device)
 
     if (o_CreateDescriptorHeap != nullptr)
     {
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
+        HookBackend::Begin();
 
         if (o_CreateDescriptorHeap != nullptr)
-            DetourAttach(&(PVOID&) o_CreateDescriptorHeap, hkCreateDescriptorHeap);
+            HookBackend::Attach(&(PVOID&) o_CreateDescriptorHeap, hkCreateDescriptorHeap);
 
         if (o_CreateRenderTargetView != nullptr)
-            DetourAttach(&(PVOID&) o_CreateRenderTargetView, hkCreateRenderTargetView);
+            HookBackend::Attach(&(PVOID&) o_CreateRenderTargetView, hkCreateRenderTargetView);
 
         if (o_CreateShaderResourceView != nullptr)
-            DetourAttach(&(PVOID&) o_CreateShaderResourceView, hkCreateShaderResourceView);
+            HookBackend::Attach(&(PVOID&) o_CreateShaderResourceView, hkCreateShaderResourceView);
 
         if (o_CreateUnorderedAccessView != nullptr)
-            DetourAttach(&(PVOID&) o_CreateUnorderedAccessView, hkCreateUnorderedAccessView);
+            HookBackend::Attach(&(PVOID&) o_CreateUnorderedAccessView, hkCreateUnorderedAccessView);
 
         if (o_CopyDescriptors != nullptr)
-            DetourAttach(&(PVOID&) o_CopyDescriptors, hkCopyDescriptors);
+            HookBackend::Attach(&(PVOID&) o_CopyDescriptors, hkCopyDescriptors);
 
         if (o_CopyDescriptorsSimple != nullptr)
-            DetourAttach(&(PVOID&) o_CopyDescriptorsSimple, hkCopyDescriptorsSimple);
+            HookBackend::Attach(&(PVOID&) o_CopyDescriptorsSimple, hkCopyDescriptorsSimple);
 
-        auto detourResult = DetourTransactionCommit();
-        if (detourResult != NO_ERROR)
+        auto detourResult = HookBackend::Commit();
+        if (FAILED(detourResult))
         {
             LOG_ERROR("Failed to hook Descriptor methods: {:X}", detourResult);
             o_CreateDescriptorHeap = nullptr;
@@ -2682,53 +2679,52 @@ void ResTrack_Dx12::ReleaseDeviceHooks()
 {
     LOG_DEBUG("");
 
-    DetourTransactionBegin();
-    DetourUpdateThread(GetCurrentThread());
+    HookBackend::Begin();
 
     if (o_CreateDescriptorHeap != nullptr)
-        DetourDetach(&(PVOID&) o_CreateDescriptorHeap, hkCreateDescriptorHeap);
+        HookBackend::Detach(&(PVOID&) o_CreateDescriptorHeap, hkCreateDescriptorHeap);
 
     if (o_CreateRenderTargetView != nullptr)
-        DetourDetach(&(PVOID&) o_CreateRenderTargetView, hkCreateRenderTargetView);
+        HookBackend::Detach(&(PVOID&) o_CreateRenderTargetView, hkCreateRenderTargetView);
 
     if (o_CreateShaderResourceView != nullptr)
-        DetourDetach(&(PVOID&) o_CreateShaderResourceView, hkCreateShaderResourceView);
+        HookBackend::Detach(&(PVOID&) o_CreateShaderResourceView, hkCreateShaderResourceView);
 
     if (o_CreateUnorderedAccessView != nullptr)
-        DetourDetach(&(PVOID&) o_CreateUnorderedAccessView, hkCreateUnorderedAccessView);
+        HookBackend::Detach(&(PVOID&) o_CreateUnorderedAccessView, hkCreateUnorderedAccessView);
 
     if (o_CopyDescriptors != nullptr)
-        DetourDetach(&(PVOID&) o_CopyDescriptors, hkCopyDescriptors);
+        HookBackend::Detach(&(PVOID&) o_CopyDescriptors, hkCopyDescriptors);
 
     if (o_CopyDescriptorsSimple != nullptr)
-        DetourDetach(&(PVOID&) o_CopyDescriptorsSimple, hkCopyDescriptorsSimple);
+        HookBackend::Detach(&(PVOID&) o_CopyDescriptorsSimple, hkCopyDescriptorsSimple);
 
     // CommandList
     if (o_Reset != nullptr)
-        DetourDetach(&(PVOID&) o_Reset, hkReset);
+        HookBackend::Detach(&(PVOID&) o_Reset, hkReset);
     if (o_ClearState != nullptr)
-        DetourDetach(&(PVOID&) o_ClearState, hkClearState);
+        HookBackend::Detach(&(PVOID&) o_ClearState, hkClearState);
 
     if (o_OMSetRenderTargets != nullptr)
-        DetourDetach(&(PVOID&) o_OMSetRenderTargets, hkOMSetRenderTargets);
+        HookBackend::Detach(&(PVOID&) o_OMSetRenderTargets, hkOMSetRenderTargets);
 
     if (o_SetGraphicsRootDescriptorTable != nullptr)
-        DetourDetach(&(PVOID&) o_SetGraphicsRootDescriptorTable, hkSetGraphicsRootDescriptorTable);
+        HookBackend::Detach(&(PVOID&) o_SetGraphicsRootDescriptorTable, hkSetGraphicsRootDescriptorTable);
 
     if (o_SetComputeRootDescriptorTable != nullptr)
-        DetourDetach(&(PVOID&) o_SetComputeRootDescriptorTable, hkSetComputeRootDescriptorTable);
+        HookBackend::Detach(&(PVOID&) o_SetComputeRootDescriptorTable, hkSetComputeRootDescriptorTable);
 
     if (o_DrawIndexedInstanced != nullptr)
-        DetourDetach(&(PVOID&) o_DrawIndexedInstanced, hkDrawIndexedInstanced);
+        HookBackend::Detach(&(PVOID&) o_DrawIndexedInstanced, hkDrawIndexedInstanced);
 
     if (o_DrawInstanced != nullptr)
-        DetourDetach(&(PVOID&) o_DrawInstanced, hkDrawInstanced);
+        HookBackend::Detach(&(PVOID&) o_DrawInstanced, hkDrawInstanced);
 
     if (o_Dispatch != nullptr)
-        DetourDetach(&(PVOID&) o_Dispatch, hkDispatch);
+        HookBackend::Detach(&(PVOID&) o_Dispatch, hkDispatch);
 
-    auto detourResult = DetourTransactionCommit();
-    if (detourResult != NO_ERROR)
+    auto detourResult = HookBackend::Commit();
+    if (FAILED(detourResult))
     {
         LOG_ERROR("Failed to unhook DX12 methods: {:X}", detourResult);
     }
@@ -2761,26 +2757,25 @@ void ResTrack_Dx12::ReleaseHooks()
 {
     LOG_DEBUG("");
 
-    DetourTransactionBegin();
-    DetourUpdateThread(GetCurrentThread());
+    HookBackend::Begin();
 
     // if (o_CreateDescriptorHeap != nullptr)
-    //     DetourDetach(&(PVOID&) o_CreateDescriptorHeap, hkCreateDescriptorHeap);
+    //     HookBackend::Detach(&(PVOID&) o_CreateDescriptorHeap, hkCreateDescriptorHeap);
 
     // if (o_CreateRenderTargetView != nullptr)
-    //     DetourDetach(&(PVOID&) o_CreateRenderTargetView, hkCreateRenderTargetView);
+    //     HookBackend::Detach(&(PVOID&) o_CreateRenderTargetView, hkCreateRenderTargetView);
 
     // if (o_CreateShaderResourceView != nullptr)
-    //     DetourDetach(&(PVOID&) o_CreateShaderResourceView, hkCreateShaderResourceView);
+    //     HookBackend::Detach(&(PVOID&) o_CreateShaderResourceView, hkCreateShaderResourceView);
 
     // if (o_CreateUnorderedAccessView != nullptr)
-    //     DetourDetach(&(PVOID&) o_CreateUnorderedAccessView, hkCreateUnorderedAccessView);
+    //     HookBackend::Detach(&(PVOID&) o_CreateUnorderedAccessView, hkCreateUnorderedAccessView);
 
     // if (o_CopyDescriptors != nullptr)
-    //     DetourDetach(&(PVOID&) o_CopyDescriptors, hkCopyDescriptors);
+    //     HookBackend::Detach(&(PVOID&) o_CopyDescriptors, hkCopyDescriptors);
 
     // if (o_CopyDescriptorsSimple != nullptr)
-    //     DetourDetach(&(PVOID&) o_CopyDescriptorsSimple, hkCopyDescriptorsSimple);
+    //     HookBackend::Detach(&(PVOID&) o_CopyDescriptorsSimple, hkCopyDescriptorsSimple);
 
     // o_CreateDescriptorHeap = nullptr;
     // o_CreateRenderTargetView = nullptr;
@@ -2790,31 +2785,31 @@ void ResTrack_Dx12::ReleaseHooks()
     // o_CopyDescriptorsSimple = nullptr;
 
     if (o_Reset != nullptr)
-        DetourDetach(&(PVOID&) o_Reset, hkReset);
+        HookBackend::Detach(&(PVOID&) o_Reset, hkReset);
 
     if (o_ClearState != nullptr)
-        DetourDetach(&(PVOID&) o_ClearState, hkClearState);
+        HookBackend::Detach(&(PVOID&) o_ClearState, hkClearState);
 
     if (o_OMSetRenderTargets != nullptr)
-        DetourDetach(&(PVOID&) o_OMSetRenderTargets, hkOMSetRenderTargets);
+        HookBackend::Detach(&(PVOID&) o_OMSetRenderTargets, hkOMSetRenderTargets);
 
     if (o_SetGraphicsRootDescriptorTable != nullptr)
-        DetourDetach(&(PVOID&) o_SetGraphicsRootDescriptorTable, hkSetGraphicsRootDescriptorTable);
+        HookBackend::Detach(&(PVOID&) o_SetGraphicsRootDescriptorTable, hkSetGraphicsRootDescriptorTable);
 
     if (o_SetComputeRootDescriptorTable != nullptr)
-        DetourDetach(&(PVOID&) o_SetComputeRootDescriptorTable, hkSetComputeRootDescriptorTable);
+        HookBackend::Detach(&(PVOID&) o_SetComputeRootDescriptorTable, hkSetComputeRootDescriptorTable);
 
     if (o_DrawIndexedInstanced != nullptr)
-        DetourDetach(&(PVOID&) o_DrawIndexedInstanced, hkDrawIndexedInstanced);
+        HookBackend::Detach(&(PVOID&) o_DrawIndexedInstanced, hkDrawIndexedInstanced);
 
     if (o_DrawInstanced != nullptr)
-        DetourDetach(&(PVOID&) o_DrawInstanced, hkDrawInstanced);
+        HookBackend::Detach(&(PVOID&) o_DrawInstanced, hkDrawInstanced);
 
     if (o_Dispatch != nullptr)
-        DetourDetach(&(PVOID&) o_Dispatch, hkDispatch);
+        HookBackend::Detach(&(PVOID&) o_Dispatch, hkDispatch);
 
-    auto detourResult = DetourTransactionCommit();
-    if (detourResult != NO_ERROR)
+    auto detourResult = HookBackend::Commit();
+    if (FAILED(detourResult))
     {
         LOG_ERROR("Failed to unhook CommandList methods: {:X}", detourResult);
     }

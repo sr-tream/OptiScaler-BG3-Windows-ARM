@@ -672,6 +672,8 @@ class Config
     CustomOptional<bool> UseFsr2Inputs { true };
     CustomOptional<bool> UseFsr2Dx11Inputs { false };
     CustomOptional<bool> UseFsr2VulkanInputs { false };
+    CustomOptional<bool> ReplaceBg3Fsr2 { false };
+    CustomOptional<bool> OptimizeBg3Fsr2 { false };
     CustomOptional<bool> Fsr2Pattern { false };
     CustomOptional<bool> UseFsr3Inputs { true };
     CustomOptional<bool> Fsr3Pattern { false };

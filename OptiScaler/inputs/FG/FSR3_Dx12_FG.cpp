@@ -18,7 +18,7 @@
 #include <proxies/KernelBase_Proxy.h>
 
 #include <scanner/scanner.h>
-#include <detours/detours.h>
+#include <hooks/HookBackend.h>
 
 #include "fsr3/ffx_fsr3.h"
 #include "fsr3/dx12/ffx_dx12.h"
@@ -911,40 +911,39 @@ void FSR3FG::HookFSR3FGExeInputs()
     LOG_DEBUG("ffxFrameInterpolationContextDestroy: {:X}", (size_t) o_ffxFrameInterpolationContextDestroy);
     LOG_DEBUG("ffxFsr3ConfigureFrameGeneration: {:X}", (size_t) o_ffxFsr3ConfigureFrameGeneration);
 
-    DetourTransactionBegin();
-    DetourUpdateThread(GetCurrentThread());
+    HookBackend::Begin();
 
     if (o_ffxReplaceSwapchainForFrameinterpolationDX12 != nullptr)
-        DetourAttach(&(PVOID&) o_ffxReplaceSwapchainForFrameinterpolationDX12,
+        HookBackend::Attach(&(PVOID&) o_ffxReplaceSwapchainForFrameinterpolationDX12,
                      hkffxReplaceSwapchainForFrameinterpolationDX12);
     if (o_ffxCreateFrameinterpolationSwapchainDX12 != nullptr)
-        DetourAttach(&(PVOID&) o_ffxCreateFrameinterpolationSwapchainDX12, hkffxCreateFrameinterpolationSwapchainDX12);
+        HookBackend::Attach(&(PVOID&) o_ffxCreateFrameinterpolationSwapchainDX12, hkffxCreateFrameinterpolationSwapchainDX12);
     if (o_ffxCreateFrameinterpolationSwapchainForHwndDX12 != nullptr)
-        DetourAttach(&(PVOID&) o_ffxCreateFrameinterpolationSwapchainForHwndDX12,
+        HookBackend::Attach(&(PVOID&) o_ffxCreateFrameinterpolationSwapchainForHwndDX12,
                      hkffxCreateFrameinterpolationSwapchainForHwndDX12);
     if (o_ffxWaitForPresents != nullptr)
-        DetourAttach(&(PVOID&) o_ffxWaitForPresents, hkffxWaitForPresents);
+        HookBackend::Attach(&(PVOID&) o_ffxWaitForPresents, hkffxWaitForPresents);
     if (o_ffxRegisterFrameinterpolationUiResourceDX12 != nullptr)
-        DetourAttach(&(PVOID&) o_ffxRegisterFrameinterpolationUiResourceDX12,
+        HookBackend::Attach(&(PVOID&) o_ffxRegisterFrameinterpolationUiResourceDX12,
                      hkffxRegisterFrameinterpolationUiResourceDX12);
     if (o_ffxGetFrameinterpolationCommandlistDX12 != nullptr)
-        DetourAttach(&(PVOID&) o_ffxGetFrameinterpolationCommandlistDX12, hkffxGetFrameinterpolationCommandlistDX12);
+        HookBackend::Attach(&(PVOID&) o_ffxGetFrameinterpolationCommandlistDX12, hkffxGetFrameinterpolationCommandlistDX12);
     if (o_ffxGetFrameinterpolationTextureDX12 != nullptr)
-        DetourAttach(&(PVOID&) o_ffxGetFrameinterpolationTextureDX12, hkffxGetFrameinterpolationTextureDX12);
+        HookBackend::Attach(&(PVOID&) o_ffxGetFrameinterpolationTextureDX12, hkffxGetFrameinterpolationTextureDX12);
     if (o_ffxFrameInterpolationContextCreate != nullptr)
-        DetourAttach(&(PVOID&) o_ffxFrameInterpolationContextCreate, hkffxFrameInterpolationContextCreate);
+        HookBackend::Attach(&(PVOID&) o_ffxFrameInterpolationContextCreate, hkffxFrameInterpolationContextCreate);
     if (o_ffxFrameInterpolationDispatch != nullptr)
-        DetourAttach(&(PVOID&) o_ffxFrameInterpolationDispatch, hkffxFrameInterpolationDispatch);
+        HookBackend::Attach(&(PVOID&) o_ffxFrameInterpolationDispatch, hkffxFrameInterpolationDispatch);
     if (o_ffxFrameInterpolationContextDestroy != nullptr)
-        DetourAttach(&(PVOID&) o_ffxFrameInterpolationContextDestroy, hkffxFrameInterpolationContextDestroy);
+        HookBackend::Attach(&(PVOID&) o_ffxFrameInterpolationContextDestroy, hkffxFrameInterpolationContextDestroy);
     if (o_ffxFsr3ConfigureFrameGeneration != nullptr)
-        DetourAttach(&(PVOID&) o_ffxFsr3ConfigureFrameGeneration, hkffxFsr3ConfigureFrameGeneration);
+        HookBackend::Attach(&(PVOID&) o_ffxFsr3ConfigureFrameGeneration, hkffxFsr3ConfigureFrameGeneration);
     if (o_ffxSetFrameGenerationConfigToSwapchainDX12 != nullptr)
-        DetourAttach(&(PVOID&) o_ffxSetFrameGenerationConfigToSwapchainDX12,
+        HookBackend::Attach(&(PVOID&) o_ffxSetFrameGenerationConfigToSwapchainDX12,
                      hkffxSetFrameGenerationConfigToSwapchainDX12);
 
-    auto detourResult = DetourTransactionCommit();
-    if (detourResult != NO_ERROR)
+    auto detourResult = HookBackend::Commit();
+    if (FAILED(detourResult))
     {
         LOG_ERROR("Failed to hook FSR3-FG exe methods, DetourTransactionCommit result: {:X}", detourResult);
         o_ffxReplaceSwapchainForFrameinterpolationDX12 = nullptr;
@@ -1037,40 +1036,39 @@ void FSR3FG::HookFSR3FGInputs()
     LOG_DEBUG("ffxFrameInterpolationContextDestroy: {:X}", (size_t) o_ffxFrameInterpolationContextDestroy);
     LOG_DEBUG("ffxFsr3ConfigureFrameGeneration: {:X}", (size_t) o_ffxFsr3ConfigureFrameGeneration);
 
-    DetourTransactionBegin();
-    DetourUpdateThread(GetCurrentThread());
+    HookBackend::Begin();
 
     if (o_ffxReplaceSwapchainForFrameinterpolationDX12 != nullptr)
-        DetourAttach(&(PVOID&) o_ffxReplaceSwapchainForFrameinterpolationDX12,
+        HookBackend::Attach(&(PVOID&) o_ffxReplaceSwapchainForFrameinterpolationDX12,
                      hkffxReplaceSwapchainForFrameinterpolationDX12);
     if (o_ffxCreateFrameinterpolationSwapchainDX12 != nullptr)
-        DetourAttach(&(PVOID&) o_ffxCreateFrameinterpolationSwapchainDX12, hkffxCreateFrameinterpolationSwapchainDX12);
+        HookBackend::Attach(&(PVOID&) o_ffxCreateFrameinterpolationSwapchainDX12, hkffxCreateFrameinterpolationSwapchainDX12);
     if (o_ffxCreateFrameinterpolationSwapchainForHwndDX12 != nullptr)
-        DetourAttach(&(PVOID&) o_ffxCreateFrameinterpolationSwapchainForHwndDX12,
+        HookBackend::Attach(&(PVOID&) o_ffxCreateFrameinterpolationSwapchainForHwndDX12,
                      hkffxCreateFrameinterpolationSwapchainForHwndDX12);
     if (o_ffxWaitForPresents != nullptr)
-        DetourAttach(&(PVOID&) o_ffxWaitForPresents, hkffxWaitForPresents);
+        HookBackend::Attach(&(PVOID&) o_ffxWaitForPresents, hkffxWaitForPresents);
     if (o_ffxRegisterFrameinterpolationUiResourceDX12 != nullptr)
-        DetourAttach(&(PVOID&) o_ffxRegisterFrameinterpolationUiResourceDX12,
+        HookBackend::Attach(&(PVOID&) o_ffxRegisterFrameinterpolationUiResourceDX12,
                      hkffxRegisterFrameinterpolationUiResourceDX12);
     if (o_ffxGetFrameinterpolationCommandlistDX12 != nullptr)
-        DetourAttach(&(PVOID&) o_ffxGetFrameinterpolationCommandlistDX12, hkffxGetFrameinterpolationCommandlistDX12);
+        HookBackend::Attach(&(PVOID&) o_ffxGetFrameinterpolationCommandlistDX12, hkffxGetFrameinterpolationCommandlistDX12);
     if (o_ffxGetFrameinterpolationTextureDX12 != nullptr)
-        DetourAttach(&(PVOID&) o_ffxGetFrameinterpolationTextureDX12, hkffxGetFrameinterpolationTextureDX12);
+        HookBackend::Attach(&(PVOID&) o_ffxGetFrameinterpolationTextureDX12, hkffxGetFrameinterpolationTextureDX12);
     if (o_ffxFrameInterpolationContextCreate != nullptr)
-        DetourAttach(&(PVOID&) o_ffxFrameInterpolationContextCreate, hkffxFrameInterpolationContextCreate);
+        HookBackend::Attach(&(PVOID&) o_ffxFrameInterpolationContextCreate, hkffxFrameInterpolationContextCreate);
     if (o_ffxFrameInterpolationDispatch != nullptr)
-        DetourAttach(&(PVOID&) o_ffxFrameInterpolationDispatch, hkffxFrameInterpolationDispatch);
+        HookBackend::Attach(&(PVOID&) o_ffxFrameInterpolationDispatch, hkffxFrameInterpolationDispatch);
     if (o_ffxFrameInterpolationContextDestroy != nullptr)
-        DetourAttach(&(PVOID&) o_ffxFrameInterpolationContextDestroy, hkffxFrameInterpolationContextDestroy);
+        HookBackend::Attach(&(PVOID&) o_ffxFrameInterpolationContextDestroy, hkffxFrameInterpolationContextDestroy);
     if (o_ffxFsr3ConfigureFrameGeneration != nullptr)
-        DetourAttach(&(PVOID&) o_ffxFsr3ConfigureFrameGeneration, hkffxFsr3ConfigureFrameGeneration);
+        HookBackend::Attach(&(PVOID&) o_ffxFsr3ConfigureFrameGeneration, hkffxFsr3ConfigureFrameGeneration);
     if (o_ffxSetFrameGenerationConfigToSwapchainDX12 != nullptr)
-        DetourAttach(&(PVOID&) o_ffxSetFrameGenerationConfigToSwapchainDX12,
+        HookBackend::Attach(&(PVOID&) o_ffxSetFrameGenerationConfigToSwapchainDX12,
                      hkffxSetFrameGenerationConfigToSwapchainDX12);
 
-    auto detourResult = DetourTransactionCommit();
-    if (detourResult != NO_ERROR)
+    auto detourResult = HookBackend::Commit();
+    if (FAILED(detourResult))
     {
         LOG_ERROR("Failed to hook FSR3-FG dll methods, DetourTransactionCommit result: {:X}", detourResult);
         o_ffxReplaceSwapchainForFrameinterpolationDX12 = nullptr;

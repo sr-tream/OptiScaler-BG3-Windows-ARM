@@ -1,7 +1,7 @@
 #pragma once
 #include "SysUtils.h"
 #include "Config.h"
-#include "detours/detours.h"
+#include <hooks/HookBackend.h>
 
 #include "Hook_Utils.h"
 
@@ -284,7 +284,7 @@ static void SpoofMultiSzW(LPBYTE lpData, LPDWORD lpcbData, const std::wstring& s
     if (segments.empty())
         return;
 
-    // Rebuild the MULTI_SZ in-place (same buffer, same or smaller size — safe)
+    // Rebuild the MULTI_SZ in-place (same buffer, same or smaller size ï¿½ safe)
     wchar_t* dst = reinterpret_cast<wchar_t*>(lpData);
     DWORD written = 0;
     for (const auto& seg : segments)
@@ -477,7 +477,7 @@ static LONG hkRegQueryValueExW(HKEY hKey, LPCWSTR lpValueName, LPDWORD lpReserve
             }
             else
             {
-                // REG_SZ fallback — single string, replace in-place
+                // REG_SZ fallback ï¿½ single string, replace in-place
                 std::wstring data(reinterpret_cast<wchar_t*>(lpData), *lpcbData / sizeof(wchar_t));
                 std::wstring newData = ReplaceVendorDeviceTokensW(data, vendorId, deviceId);
 
@@ -700,38 +700,37 @@ static void hookAdvapi32()
 {
     LOG_FUNC();
 
-    o_RegOpenKeyExW = reinterpret_cast<PFN_RegOpenKeyExW>(DetourFindFunction("Advapi32.dll", "RegOpenKeyExW"));
-    o_RegEnumValueW = reinterpret_cast<PFN_RegEnumValueW>(DetourFindFunction("Advapi32.dll", "RegEnumValueW"));
-    o_RegCloseKey = reinterpret_cast<PFN_RegCloseKey>(DetourFindFunction("Advapi32.dll", "RegCloseKey"));
+    o_RegOpenKeyExW = reinterpret_cast<PFN_RegOpenKeyExW>(HookBackend::FindFunction("Advapi32.dll", "RegOpenKeyExW"));
+    o_RegEnumValueW = reinterpret_cast<PFN_RegEnumValueW>(HookBackend::FindFunction("Advapi32.dll", "RegEnumValueW"));
+    o_RegCloseKey = reinterpret_cast<PFN_RegCloseKey>(HookBackend::FindFunction("Advapi32.dll", "RegCloseKey"));
 
     if (Config::Instance()->SpoofHAGS.value_or_default() || Config::Instance()->SpoofRegistry.value_or_default())
     {
         o_RegQueryValueExW =
-            reinterpret_cast<PFN_RegQueryValueExW>(DetourFindFunction("Advapi32.dll", "RegQueryValueExW"));
+            reinterpret_cast<PFN_RegQueryValueExW>(HookBackend::FindFunction("Advapi32.dll", "RegQueryValueExW"));
         o_RegQueryValueExA =
-            reinterpret_cast<PFN_RegQueryValueExA>(DetourFindFunction("Advapi32.dll", "RegQueryValueExA"));
+            reinterpret_cast<PFN_RegQueryValueExA>(HookBackend::FindFunction("Advapi32.dll", "RegQueryValueExA"));
     }
 
-    DetourTransactionBegin();
-    DetourUpdateThread(GetCurrentThread());
+    HookBackend::Begin();
 
     if (o_RegOpenKeyExW)
-        DetourAttach(&(PVOID&) o_RegOpenKeyExW, hkRegOpenKeyExW);
+        HookBackend::Attach(&(PVOID&) o_RegOpenKeyExW, hkRegOpenKeyExW);
 
     if (o_RegEnumValueW)
-        DetourAttach(&(PVOID&) o_RegEnumValueW, hkRegEnumValueW);
+        HookBackend::Attach(&(PVOID&) o_RegEnumValueW, hkRegEnumValueW);
 
     if (o_RegCloseKey)
-        DetourAttach(&(PVOID&) o_RegCloseKey, hkRegCloseKey);
+        HookBackend::Attach(&(PVOID&) o_RegCloseKey, hkRegCloseKey);
 
     if (o_RegQueryValueExW)
-        DetourAttach(&(PVOID&) o_RegQueryValueExW, hkRegQueryValueExW);
+        HookBackend::Attach(&(PVOID&) o_RegQueryValueExW, hkRegQueryValueExW);
 
     if (o_RegQueryValueExA)
-        DetourAttach(&(PVOID&) o_RegQueryValueExA, hkRegQueryValueExA);
+        HookBackend::Attach(&(PVOID&) o_RegQueryValueExA, hkRegQueryValueExA);
 
-    auto detourResult = DetourTransactionCommit();
-    if (detourResult != NO_ERROR)
+    auto detourResult = HookBackend::Commit();
+    if (FAILED(detourResult))
     {
         LOG_ERROR("DetourTransactionCommit error: {:X}", detourResult);
         o_RegOpenKeyExW = nullptr;
@@ -744,26 +743,25 @@ static void hookAdvapi32()
 
 static void unhookAdvapi32()
 {
-    DetourTransactionBegin();
-    DetourUpdateThread(GetCurrentThread());
+    HookBackend::Begin();
 
     if (o_RegOpenKeyExW)
-        DetourDetach(&(PVOID&) o_RegOpenKeyExW, hkRegOpenKeyExW);
+        HookBackend::Detach(&(PVOID&) o_RegOpenKeyExW, hkRegOpenKeyExW);
 
     if (o_RegEnumValueW)
-        DetourDetach(&(PVOID&) o_RegEnumValueW, hkRegEnumValueW);
+        HookBackend::Detach(&(PVOID&) o_RegEnumValueW, hkRegEnumValueW);
 
     if (o_RegCloseKey)
-        DetourDetach(&(PVOID&) o_RegCloseKey, hkRegCloseKey);
+        HookBackend::Detach(&(PVOID&) o_RegCloseKey, hkRegCloseKey);
 
     if (o_RegQueryValueExW)
-        DetourDetach(&(PVOID&) o_RegQueryValueExW, hkRegQueryValueExW);
+        HookBackend::Detach(&(PVOID&) o_RegQueryValueExW, hkRegQueryValueExW);
 
     if (o_RegQueryValueExA)
-        DetourDetach(&(PVOID&) o_RegQueryValueExA, hkRegQueryValueExA);
+        HookBackend::Detach(&(PVOID&) o_RegQueryValueExA, hkRegQueryValueExA);
 
-    auto detourResult = DetourTransactionCommit();
-    if (detourResult != NO_ERROR)
+    auto detourResult = HookBackend::Commit();
+    if (FAILED(detourResult))
     {
         LOG_ERROR("DetourTransactionCommit error: {:X}", detourResult);
     }

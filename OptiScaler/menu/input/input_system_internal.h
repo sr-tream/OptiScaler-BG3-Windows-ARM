@@ -363,6 +363,10 @@ struct InputState
     bool DeferredClipIsNull = false;
 
     bool CursorClipReleasedForMenu = false;
+    bool CursorClipApplyPending = false;
+    bool CursorClipApplied = false;
+    bool CursorClipMessagePosted = false;
+    std::uint64_t CursorClipGeneration = 0;
 
     std::wstring TextInput;
 
@@ -546,6 +550,8 @@ void PollInputFallbackLocked();
 // Cursor clipping
 void BeginCursorClipBlockLocked();
 void EndCursorClipBlockLocked();
+void ScheduleCursorClipPolicy();
+bool ProcessCursorClipMessage(HWND hwnd, UINT message);
 void StoreDeferredClipCursorLocked(const RECT* rect);
 bool IsVirtualScreenRect(const RECT& rect);
 RECT GetVirtualScreenRect();

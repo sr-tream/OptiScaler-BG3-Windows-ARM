@@ -7,7 +7,7 @@
 #include <proxies/Ntdll_Proxy.h>
 #include <proxies/KernelBase_Proxy.h>
 
-#include <detours/detours.h>
+#include <hooks/HookBackend.h>
 
 #include <d3d12.h>
 
@@ -131,11 +131,10 @@ class D3d12Proxy
     {
         auto addr = D3D12CreateDevice_ForHook();
 
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
-        DetourAttach(&(PVOID&) addr, method);
-        auto detourResult = DetourTransactionCommit();
-        if (detourResult != NO_ERROR)
+        HookBackend::Begin();
+        HookBackend::Attach(&(PVOID&) addr, method);
+        auto detourResult = HookBackend::Commit();
+        if (FAILED(detourResult))
         {
             LOG_ERROR("Failed to hook: {:X}", detourResult);
             return nullptr;
@@ -149,11 +148,10 @@ class D3d12Proxy
     {
         auto addr = D3D12SerializeRootSignature_ForHook();
 
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
-        DetourAttach(&(PVOID&) addr, method);
-        auto detourResult = DetourTransactionCommit();
-        if (detourResult != NO_ERROR)
+        HookBackend::Begin();
+        HookBackend::Attach(&(PVOID&) addr, method);
+        auto detourResult = HookBackend::Commit();
+        if (FAILED(detourResult))
         {
             LOG_ERROR("Failed to hook: {:X}", detourResult);
             return nullptr;
@@ -167,11 +165,10 @@ class D3d12Proxy
     {
         auto addr = D3D12CreateRootSignatureDeserializer_ForHook();
 
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
-        DetourAttach(&(PVOID&) addr, method);
-        auto detourResult = DetourTransactionCommit();
-        if (detourResult != NO_ERROR)
+        HookBackend::Begin();
+        HookBackend::Attach(&(PVOID&) addr, method);
+        auto detourResult = HookBackend::Commit();
+        if (FAILED(detourResult))
         {
             LOG_ERROR("Failed to hook: {:X}", detourResult);
             return nullptr;
@@ -185,11 +182,10 @@ class D3d12Proxy
     {
         auto addr = D3D12SerializeVersionedRootSignature_ForHook();
 
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
-        DetourAttach(&(PVOID&) addr, method);
-        auto detourResult = DetourTransactionCommit();
-        if (detourResult != NO_ERROR)
+        HookBackend::Begin();
+        HookBackend::Attach(&(PVOID&) addr, method);
+        auto detourResult = HookBackend::Commit();
+        if (FAILED(detourResult))
         {
             LOG_ERROR("Failed to hook: {:X}", detourResult);
             return nullptr;
@@ -204,11 +200,10 @@ class D3d12Proxy
     {
         auto addr = D3D12CreateVersionedRootSignatureDeserializer_ForHook();
 
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
-        DetourAttach(&(PVOID&) addr, method);
-        auto detourResult = DetourTransactionCommit();
-        if (detourResult != NO_ERROR)
+        HookBackend::Begin();
+        HookBackend::Attach(&(PVOID&) addr, method);
+        auto detourResult = HookBackend::Commit();
+        if (FAILED(detourResult))
         {
             LOG_ERROR("Failed to hook: {:X}", detourResult);
             return nullptr;
@@ -222,11 +217,10 @@ class D3d12Proxy
     {
         auto addr = D3D12GetDebugInterface_ForHook();
 
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
-        DetourAttach(&(PVOID&) addr, method);
-        auto detourResult = DetourTransactionCommit();
-        if (detourResult != NO_ERROR)
+        HookBackend::Begin();
+        HookBackend::Attach(&(PVOID&) addr, method);
+        auto detourResult = HookBackend::Commit();
+        if (FAILED(detourResult))
         {
             LOG_ERROR("Failed to hook: {:X}", detourResult);
             return nullptr;
@@ -240,11 +234,10 @@ class D3d12Proxy
     {
         auto addr = D3D12EnableExperimentalFeatures_ForHook();
 
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
-        DetourAttach(&(PVOID&) addr, method);
-        auto detourResult = DetourTransactionCommit();
-        if (detourResult != NO_ERROR)
+        HookBackend::Begin();
+        HookBackend::Attach(&(PVOID&) addr, method);
+        auto detourResult = HookBackend::Commit();
+        if (FAILED(detourResult))
         {
             LOG_ERROR("Failed to hook: {:X}", detourResult);
             return nullptr;
@@ -258,11 +251,10 @@ class D3d12Proxy
     {
         auto addr = D3D12GetInterface_ForHook();
 
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
-        DetourAttach(&(PVOID&) addr, method);
-        auto detourResult = DetourTransactionCommit();
-        if (detourResult != NO_ERROR)
+        HookBackend::Begin();
+        HookBackend::Attach(&(PVOID&) addr, method);
+        auto detourResult = HookBackend::Commit();
+        if (FAILED(detourResult))
         {
             LOG_ERROR("Failed to hook: {:X}", detourResult);
             return nullptr;

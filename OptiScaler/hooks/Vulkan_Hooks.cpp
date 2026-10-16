@@ -19,7 +19,9 @@
 
 #include <vulkan/vulkan.h>
 
-#include <detours/detours.h>
+#include <hooks/HookBackend.h>
+#include <inputs/Bg3Fsr2_Vk.h>
+#include <inputs/Bg3Fsr2_Bridge.h>
 #include <misc/IdentifyGpu.h>
 
 #include "Hook_Utils.h"
@@ -52,6 +54,7 @@ static PFN_vkAcquireNextImageKHR o_AcquireNextImageKHR = nullptr;
 static PFN_vkSetHdrMetadataEXT o_SetHdrMetadataEXT = nullptr;
 static PFN_vkGetInstanceProcAddr o_vkGetInstanceProcAddr = nullptr;
 static PFN_vkGetDeviceProcAddr o_vkGetDeviceProcAddr = nullptr;
+PFN_vkVoidFunction hkvkGetDeviceProcAddr(VkDevice device, const char* pName);
 
 // Those aren't hooked, just grabbed for use
 static PFN_vkGetPhysicalDeviceFeatures2 o_vkGetPhysicalDeviceFeatures2 = nullptr;
@@ -242,29 +245,28 @@ static void HookDevice(VkDevice InDevice)
         LOG_DEBUG("Hooking VkDevice");
 
         // Hook
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
+        HookBackend::Begin();
 
         if (o_QueuePresentKHR != nullptr)
-            DetourAttach(&(PVOID&) o_QueuePresentKHR, hkvkQueuePresentKHR);
+            HookBackend::Attach(&(PVOID&) o_QueuePresentKHR, hkvkQueuePresentKHR);
 
         if (o_CreateSwapchainKHR != nullptr)
-            DetourAttach(&(PVOID&) o_CreateSwapchainKHR, hkvkCreateSwapchainKHR);
+            HookBackend::Attach(&(PVOID&) o_CreateSwapchainKHR, hkvkCreateSwapchainKHR);
 
         if (o_DestroySwapchainKHR != nullptr)
-            DetourAttach(&(PVOID&) o_DestroySwapchainKHR, hkvkDestroySwapchainKHR);
+            HookBackend::Attach(&(PVOID&) o_DestroySwapchainKHR, hkvkDestroySwapchainKHR);
 
         if (o_GetSwapchainImagesKHR != nullptr)
-            DetourAttach(&(PVOID&) o_GetSwapchainImagesKHR, hkvkGetSwapchainImagesKHR);
+            HookBackend::Attach(&(PVOID&) o_GetSwapchainImagesKHR, hkvkGetSwapchainImagesKHR);
 
         if (o_AcquireNextImageKHR != nullptr)
-            DetourAttach(&(PVOID&) o_AcquireNextImageKHR, hkvkAcquireNextImageKHR);
+            HookBackend::Attach(&(PVOID&) o_AcquireNextImageKHR, hkvkAcquireNextImageKHR);
 
         if (o_SetHdrMetadataEXT != nullptr)
-            DetourAttach(&(PVOID&) o_SetHdrMetadataEXT, hkvkSetHdrMetadataEXT);
+            HookBackend::Attach(&(PVOID&) o_SetHdrMetadataEXT, hkvkSetHdrMetadataEXT);
 
-        auto detourResult = DetourTransactionCommit();
-        if (detourResult != NO_ERROR)
+        auto detourResult = HookBackend::Commit();
+        if (FAILED(detourResult))
         {
             LOG_ERROR("Failed to hook VkDevice, error code: {:X}", detourResult);
             o_QueuePresentKHR = nullptr;
@@ -452,6 +454,8 @@ static VkResult hkvkCreateDevice(VkPhysicalDevice physicalDevice, const VkDevice
     VulkanSpoofing::hkvkCreateDevice(physicalDevice, &localCreteInfo, pAllocator, pDevice);
 
     auto result = o_vkCreateDevice(physicalDevice, &localCreteInfo, pAllocator, pDevice);
+    if (result == VK_SUCCESS)
+        Bg3Fsr2::DeviceCreated(physicalDevice, *pDevice);
 
     if (result == VK_SUCCESS && fg != nullptr)
     {
@@ -550,12 +554,15 @@ static VkResult hkvkQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPres
     LOG_FUNC();
 
     // Upscaler GPU time computation
+    auto nativeFeatureLifetime = Bg3Fsr2Bridge::CurrentFeatureLifetime();
+    const bool nativeWindowInactive = Bg3Fsr2::ReplacementEnabled() && VulkanHooks::GameWindowInactive();
+    if (Bg3Fsr2::ReplacementEnabled())
+        Bg3Fsr2Bridge::WindowSuspended(nativeWindowInactive);
     if (auto vkFeature = dynamic_cast<IFeature_Vk*>(State::Instance().currentFeature); vkFeature != nullptr)
     {
         if (auto upscalerTimeOpt = vkFeature->ReadUpscalerTime(nullptr); upscalerTimeOpt.has_value())
         {
             vkFeature->ReadDetailedGpuTimes(nullptr, State::Instance().detailedGpuTimes);
-
             auto upscalerTime = upscalerTimeOpt.value();
             // filter out possibly wrong measured high values
             if (upscalerTime < 100.0)
@@ -589,7 +596,7 @@ static VkResult hkvkQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPres
     memcpy(&localPresentInfo, pPresentInfo, sizeof(VkPresentInfoKHR));
 
     // render menu if needed
-    if (!dxgiBacked && !MenuOverlayVk::QueuePresent(queue, &localPresentInfo))
+    if (!dxgiBacked && !nativeWindowInactive && !MenuOverlayVk::QueuePresent(queue, &localPresentInfo))
     {
         LOG_ERROR("QueuePresent: false!");
         return VK_ERROR_OUT_OF_DATE_KHR;
@@ -614,7 +621,7 @@ static VkResult hkvkQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPres
         state.lastFGFrameTime = lastPresentTime > 0.0 ? now - lastPresentTime : 0.0;
         lastPresentTime = now;
 
-        if (fg->IsActive() && !fg->IsPaused())
+        if (!nativeWindowInactive && fg->IsActive() && !fg->IsPaused())
             fg->Present();
     }
 
@@ -707,9 +714,11 @@ static VkResult hkvkCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateI
     {
         ScopedSkipSpoofingGlobal skipSpoofingGlobal {};
         bool fgSwapchain = false;
+        const bool nativeBg3WithoutFg = Bg3Fsr2::ReplacementEnabled() && !Config::Instance()->IsFGEnabled();
 
         if (auto fg = State::Instance().currentVkFG;
-            fg != nullptr && pCreateInfo != nullptr && !dxgiBacked && !State::Instance().vulkanSkipHooks)
+            fg != nullptr && pCreateInfo != nullptr && !dxgiBacked && !State::Instance().vulkanSkipHooks &&
+            !nativeBg3WithoutFg)
         {
             ScopedFGCall fgCall {};
             fgSwapchain = fg->CreateSwapchain(device, pCreateInfo, pAllocator, pSwapchain);
@@ -717,6 +726,8 @@ static VkResult hkvkCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateI
 
         if (!fgSwapchain)
             result = o_CreateSwapchainKHR(device, pCreateInfo, pAllocator, pSwapchain);
+        if (nativeBg3WithoutFg && result == VK_SUCCESS)
+            LOG_INFO("BG3FSR native Vulkan swapchain retained; frame generation disabled");
     }
 
 #ifdef LOW_LATENCY_INPUTS
@@ -736,7 +747,22 @@ static VkResult hkvkCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateI
         _device = device;
         LOG_DEBUG("_device captured: {0:X}", (UINT64) _device);
 
-        MenuOverlayVk::CreateSwapchain(device, _PD, _instance, _hwnd, pCreateInfo, pAllocator, pSwapchain);
+        // Match the presented surface, including games which cached their surface function before our hooks.
+        auto hwnd = VulkanHooks::SurfaceWindow(pCreateInfo->surface);
+        if (!IsWindow(hwnd))
+            hwnd = _hwnd;
+        if (!IsWindow(hwnd))
+        {
+            auto candidate = Util::GetProcessWindow();
+            DWORD processId = 0;
+            GetWindowThreadProcessId(candidate, &processId);
+            if (processId == GetCurrentProcessId())
+                hwnd = candidate;
+        }
+        _hwnd = hwnd;
+        Bg3Fsr2Bridge::SwapchainChanged();
+
+        MenuOverlayVk::CreateSwapchain(device, _PD, _instance, hwnd, pCreateInfo, pAllocator, pSwapchain);
     }
 
     LOG_FUNC_RESULT(result);
@@ -820,9 +846,21 @@ PFN_vkVoidFunction hkvkGetInstanceProcAddr(VkInstance instance, const char* pNam
     if (orgFunc == VK_NULL_HANDLE)
         return VK_NULL_HANDLE;
 
+    if (auto observer = Bg3Fsr2::GetAddress(pName, orgFunc))
+        return observer;
+
     auto procName = std::string(pName);
 
-    if (procName == std::string("vkCreateInstance"))
+    if (procName == std::string("vkGetDeviceProcAddr"))
+    {
+        // The instance resolver may return a driver resolver that bypasses the hooked loader export.
+        return (PFN_vkVoidFunction) hkvkGetDeviceProcAddr;
+    }
+    else if (procName == std::string("vkGetInstanceProcAddr"))
+    {
+        return (PFN_vkVoidFunction) hkvkGetInstanceProcAddr;
+    }
+    else if (procName == std::string("vkCreateInstance"))
     {
         if (o_vkCreateInstance == nullptr)
             o_vkCreateInstance = (PFN_vkCreateInstance) orgFunc;
@@ -837,6 +875,14 @@ PFN_vkVoidFunction hkvkGetInstanceProcAddr(VkInstance instance, const char* pNam
 
         LOG_DEBUG("vkCreateDevice");
         return (PFN_vkVoidFunction) hkvkCreateDevice;
+    }
+    else if (procName == std::string("vkCreateWin32SurfaceKHR"))
+    {
+        // Instance dispatch can bypass the loader's exported vkCreateWin32SurfaceKHR.
+        if (o_vkCreateWin32SurfaceKHR == nullptr)
+            o_vkCreateWin32SurfaceKHR = (PFN_vkCreateWin32SurfaceKHR) orgFunc;
+
+        return (PFN_vkVoidFunction) hkvkCreateWin32SurfaceKHR;
     }
 
     if (auto lowLatencyInput = LowLatencyInputHook(pName, orgFunc, _ReturnAddress()))
@@ -856,6 +902,9 @@ PFN_vkVoidFunction hkvkGetDeviceProcAddr(VkDevice device, const char* pName)
 
     if (orgFunc == VK_NULL_HANDLE)
         return VK_NULL_HANDLE;
+
+    if (auto observer = Bg3Fsr2::GetAddress(pName, orgFunc))
+        return observer;
 
     auto procName = std::string(pName);
 
@@ -911,6 +960,19 @@ PFN_vkVoidFunction VulkanHooks::GetDeviceProcAddr(VkDevice device, const char* p
     return vkGetDeviceProcAddr(device, pName);
 }
 
+bool VulkanHooks::GameWindowInactive()
+{
+    if (!IsWindow(_hwnd))
+        return false;
+    const HWND root = GetAncestor(_hwnd, GA_ROOT);
+    RECT client {};
+    if (IsIconic(root) || (GetClientRect(_hwnd, &client) &&
+        (client.right <= client.left || client.bottom <= client.top)))
+        return true;
+    const HWND foreground = GetForegroundWindow();
+    return foreground == nullptr || GetAncestor(foreground, GA_ROOT) != root;
+}
+
 void VulkanHooks::Hook(HMODULE vulkan1)
 {
     if (vulkanModule == nullptr)
@@ -919,6 +981,7 @@ void VulkanHooks::Hook(HMODULE vulkan1)
     VulkanSpoofing::HookForVulkanSpoofing(vulkan1);
     VulkanSpoofing::HookForVulkanExtensionSpoofing(vulkan1);
     VulkanSpoofing::HookForVulkanVRAMSpoofing(vulkan1);
+    Bg3Fsr2::HookVulkan(vulkan1);
 
     if (o_vkCreateDevice != nullptr)
         return;
@@ -949,29 +1012,28 @@ void VulkanHooks::Hook(HMODULE vulkan1)
     address = KernelBaseProxy::GetProcAddress_()(vulkan1, "vkSignalSemaphore");
     o_vkSignalSemaphore = (PFN_vkSignalSemaphore) address;
 
-    DetourTransactionBegin();
-    DetourUpdateThread(GetCurrentThread());
+    HookBackend::Begin();
 
     if (o_vkCreateDevice != nullptr)
-        DetourAttach(&(PVOID&) o_vkCreateDevice, hkvkCreateDevice);
+        HookBackend::Attach(&(PVOID&) o_vkCreateDevice, hkvkCreateDevice);
 
     if (o_vkGetInstanceProcAddr != nullptr)
-        DetourAttach(&(PVOID&) o_vkGetInstanceProcAddr, hkvkGetInstanceProcAddr);
+        HookBackend::Attach(&(PVOID&) o_vkGetInstanceProcAddr, hkvkGetInstanceProcAddr);
 
     if (o_vkGetDeviceProcAddr != nullptr)
-        DetourAttach(&(PVOID&) o_vkGetDeviceProcAddr, hkvkGetDeviceProcAddr);
+        HookBackend::Attach(&(PVOID&) o_vkGetDeviceProcAddr, hkvkGetDeviceProcAddr);
 
     if (o_vkCreateInstance != nullptr)
-        DetourAttach(&(PVOID&) o_vkCreateInstance, hkvkCreateInstance);
+        HookBackend::Attach(&(PVOID&) o_vkCreateInstance, hkvkCreateInstance);
 
     if (o_vkCreateWin32SurfaceKHR != nullptr)
-        DetourAttach(&(PVOID&) o_vkCreateWin32SurfaceKHR, hkvkCreateWin32SurfaceKHR);
+        HookBackend::Attach(&(PVOID&) o_vkCreateWin32SurfaceKHR, hkvkCreateWin32SurfaceKHR);
 
     // if (o_vkCmdPipelineBarrier != nullptr)
-    //     DetourAttach(&(PVOID&) o_vkCmdPipelineBarrier, hkvkCmdPipelineBarrier);
+    //     HookBackend::Attach(&(PVOID&) o_vkCmdPipelineBarrier, hkvkCmdPipelineBarrier);
 
-    auto detourResult = DetourTransactionCommit();
-    if (detourResult != NO_ERROR)
+    auto detourResult = HookBackend::Commit();
+    if (FAILED(detourResult))
     {
         LOG_ERROR("Failed to hook Vulkan, error code: {:X}", detourResult);
         o_vkCreateDevice = nullptr;
@@ -985,41 +1047,40 @@ void VulkanHooks::Hook(HMODULE vulkan1)
 
 void VulkanHooks::Unhook()
 {
-    DetourTransactionBegin();
-    DetourUpdateThread(GetCurrentThread());
+    HookBackend::Begin();
 
     if (o_QueuePresentKHR != nullptr)
-        DetourDetach(&(PVOID&) o_QueuePresentKHR, hkvkQueuePresentKHR);
+        HookBackend::Detach(&(PVOID&) o_QueuePresentKHR, hkvkQueuePresentKHR);
 
     if (o_CreateSwapchainKHR != nullptr)
-        DetourDetach(&(PVOID&) o_CreateSwapchainKHR, hkvkCreateSwapchainKHR);
+        HookBackend::Detach(&(PVOID&) o_CreateSwapchainKHR, hkvkCreateSwapchainKHR);
 
     if (o_DestroySwapchainKHR != nullptr)
-        DetourDetach(&(PVOID&) o_DestroySwapchainKHR, hkvkDestroySwapchainKHR);
+        HookBackend::Detach(&(PVOID&) o_DestroySwapchainKHR, hkvkDestroySwapchainKHR);
 
     if (o_GetSwapchainImagesKHR != nullptr)
-        DetourDetach(&(PVOID&) o_GetSwapchainImagesKHR, hkvkGetSwapchainImagesKHR);
+        HookBackend::Detach(&(PVOID&) o_GetSwapchainImagesKHR, hkvkGetSwapchainImagesKHR);
 
     if (o_AcquireNextImageKHR != nullptr)
-        DetourDetach(&(PVOID&) o_AcquireNextImageKHR, hkvkAcquireNextImageKHR);
+        HookBackend::Detach(&(PVOID&) o_AcquireNextImageKHR, hkvkAcquireNextImageKHR);
 
     if (o_SetHdrMetadataEXT != nullptr)
-        DetourDetach(&(PVOID&) o_SetHdrMetadataEXT, hkvkSetHdrMetadataEXT);
+        HookBackend::Detach(&(PVOID&) o_SetHdrMetadataEXT, hkvkSetHdrMetadataEXT);
 
     if (o_vkCreateDevice != nullptr)
-        DetourDetach(&(PVOID&) o_vkCreateDevice, hkvkCreateDevice);
+        HookBackend::Detach(&(PVOID&) o_vkCreateDevice, hkvkCreateDevice);
 
     if (o_vkCreateInstance != nullptr)
-        DetourDetach(&(PVOID&) o_vkCreateInstance, hkvkCreateInstance);
+        HookBackend::Detach(&(PVOID&) o_vkCreateInstance, hkvkCreateInstance);
 
     if (o_vkCreateWin32SurfaceKHR != nullptr)
-        DetourDetach(&(PVOID&) o_vkCreateWin32SurfaceKHR, hkvkCreateWin32SurfaceKHR);
+        HookBackend::Detach(&(PVOID&) o_vkCreateWin32SurfaceKHR, hkvkCreateWin32SurfaceKHR);
 
     // if (o_vkCmdPipelineBarrier != nullptr)
-    //     DetourDetach(&(PVOID&) o_vkCmdPipelineBarrier, hkvkCmdPipelineBarrier);
+    //     HookBackend::Detach(&(PVOID&) o_vkCmdPipelineBarrier, hkvkCmdPipelineBarrier);
 
-    auto detourResult = DetourTransactionCommit();
-    if (detourResult != NO_ERROR)
+    auto detourResult = HookBackend::Commit();
+    if (FAILED(detourResult))
     {
         LOG_ERROR("Failed to unhook Vulkan, error code: {:X}", detourResult);
     }

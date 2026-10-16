@@ -8,7 +8,7 @@
 #include "Ntdll_Proxy.h"
 #include "KernelBase_Proxy.h"
 
-#include <detours/detours.h>
+#include <hooks/HookBackend.h>
 
 // List of functions to proxy
 #define PROXY_FUNCTIONS(X)                                                                                             \
@@ -70,11 +70,10 @@ class Kernel32Proxy
     static PFN_##name Hook_##name(PVOID method)                                                                        \
     {                                                                                                                  \
         auto addr = name##_Hooked();                                                                                   \
-        DetourTransactionBegin();                                                                                      \
-        DetourUpdateThread(GetCurrentThread());                                                                        \
-        DetourAttach(&(PVOID&) addr, method);                                                                          \
-        auto detourResult = DetourTransactionCommit();                                                                 \
-        if (detourResult != NO_ERROR)                                                                                  \
+        HookBackend::Begin();                                                                                      \
+        HookBackend::Attach(&(PVOID&) addr, method);                                                                          \
+        auto detourResult = HookBackend::Commit();                                                                 \
+        if (FAILED(detourResult))                                                                                  \
         {                                                                                                              \
             LOG_ERROR("Failed to hook: {:X}", detourResult);                                                           \
             return nullptr;                                                                                            \

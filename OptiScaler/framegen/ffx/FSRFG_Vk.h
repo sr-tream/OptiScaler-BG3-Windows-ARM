@@ -44,6 +44,7 @@ class FSRFG_Vk : public virtual IFGFeature_Vk
     VkFence _fence[BUFFER_COUNT] {};
 
     void CreateContext();
+    void EvaluateStateInternal(FG_Constants& fgConstants);
     void ReleaseSwapchainContext();
     ffxReturnCode_t ConfigureEnabled(bool enabled);
 
@@ -82,6 +83,7 @@ class FSRFG_Vk : public virtual IFGFeature_Vk
     void SetHdrMetadata(VkDevice device, VkSwapchainKHR swapchain, const VkHdrMetadataEXT* pMetadata) override final;
 
     void EvaluateState(FG_Constants& fgConstants) override final;
+    bool TryEvaluateState(FG_Constants& fgConstants) override final;
 
     FSRFG_Vk();
     ~FSRFG_Vk();

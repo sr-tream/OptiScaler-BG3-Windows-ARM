@@ -5,6 +5,7 @@
 #include <State.h>
 #include <Config.h>
 #include <MathUtils.h>
+#include <inputs/Bg3Fsr2_Bridge.h>
 
 #include <nvsdk_ngx_vk.h>
 
@@ -44,12 +45,23 @@ void UpscalerInputsVk::UpscaleStart(VkCommandBuffer cmdBuffer, NVSDK_NGX_Paramet
     if (fg == nullptr || state.activeFgInput != FGInput::Upscaler || !fg->HasSwapchain())
         return;
 
+    const bool nativeBg3 = feature && feature->Handle() && feature->Handle()->Id == Bg3Fsr2Bridge::HandleId;
+    if (nativeBg3 && !Config::Instance()->IsFGEnabled())
+        return;
     auto constants = UpscalerInputs::GetFGConstants(feature);
-    fg->EvaluateState(constants);
+    if (nativeBg3)
+    {
+        if (!fg->TryEvaluateState(constants))
+            return;
+    }
+    else
+        fg->EvaluateState(constants);
 
     // Present dispatches the previous frame's data
     if (fg->Mutex.getOwner() == 2)
     {
+        if (nativeBg3)
+            return;
         LOG_TRACE("Waiting for present!");
         fg->Mutex.lock(4);
         fg->Mutex.unlockThis(4);

@@ -14,6 +14,7 @@
 
 #include <magic_enum.hpp>
 #include <low_latency/input/input_xell.h>
+#include <deque>
 
 #pragma comment(lib, "Version.lib")
 
@@ -37,18 +38,25 @@ typedef decltype(&xellSetFgEnabled) PFN_xellSetFgEnabled;
 typedef decltype(&xellSetGeneratedFramesCount) PFN_xellSetGeneratedFramesCount;
 typedef decltype(&xellGetLastPresentStartFrameId) PFN_xellGetLastPresentStartFrameId;
 
-// This callback runs once for every function exported by the Old DLL
-static int ExportCallback(PVOID hNewDll, ULONG nOrdinal, LPCSTR pszName, PVOID pOldFunction)
+struct ExportRedirectContext
+{
+    HMODULE newModule;
+    std::deque<PVOID> targets;
+};
+
+// Target pointer storage must remain valid until the transaction commits.
+static BOOL WINAPI ExportCallback(PVOID context, ULONG nOrdinal, LPCSTR pszName, PVOID pOldFunction)
 {
     if (pszName == NULL)
         return true;
 
-    auto pNewFunction = KernelBaseProxy::GetProcAddress_()((HMODULE) hNewDll, pszName);
+    auto& redirect = *static_cast<ExportRedirectContext*>(context);
+    auto pNewFunction = KernelBaseProxy::GetProcAddress_()(redirect.newModule, pszName);
 
     if (pNewFunction && pNewFunction != pOldFunction)
     {
-        // pOldFunction doesn't get stored because we don't plan on calling the old DLL
-        if (DetourAttach(&pOldFunction, pNewFunction))
+        redirect.targets.push_back(pOldFunction);
+        if (FAILED(HookBackend::Attach(&redirect.targets.back(), pNewFunction)))
             LOG_TRACE("Failed to detour {}", pszName);
     }
 
@@ -63,13 +71,18 @@ static void RedirectAllExports(HMODULE hOld, HMODULE hNew)
         return;
     }
 
-    DetourTransactionBegin();
-    DetourUpdateThread(GetCurrentThread());
+    ExportRedirectContext redirect { hNew };
+    HookBackend::Begin();
 
-    DetourEnumerateExports(hOld, hNew, ExportCallback);
+    if (!HookBackend::EnumerateExports(hOld, &redirect, ExportCallback))
+    {
+        HookBackend::Abort();
+        LOG_ERROR("Failed to enumerate exports: {}", GetLastError());
+        return;
+    }
 
-    auto detourResult = DetourTransactionCommit();
-    if (detourResult != NO_ERROR)
+    auto detourResult = HookBackend::Commit();
+    if (FAILED(detourResult))
         LOG_ERROR("Failed to commit detours: {:X}", detourResult);
 }
 
@@ -274,20 +287,19 @@ class XeLLProxy
             return;
         }
 
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
+        HookBackend::Begin();
 
         for (auto& entry : _realEntries)
         {
             auto ours = (PVOID) KernelBaseProxy::GetProcAddress_()(dllModule, entry.name);
 
             if (*entry.real != nullptr && ours != nullptr)
-                DetourAttach(entry.real, ours);
+                HookBackend::Attach(entry.real, ours);
         }
 
-        auto result = DetourTransactionCommit();
+        auto result = HookBackend::Commit();
 
-        if (result == NO_ERROR)
+        if (SUCCEEDED(result))
             LOG_INFO("{} is the real XeLL, its calls go to the XeLL input", path);
         else
             LOG_ERROR("Couldn't redirect {} to the XeLL input: {}", path, result);

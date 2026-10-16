@@ -9,7 +9,7 @@
 
 #include <magic_enum.hpp>
 
-#include <detours/detours.h>
+#include <hooks/HookBackend.h>
 
 #include <vulkan/vulkan_core.h>
 #include <misc/IdentifyGpu.h>
@@ -964,20 +964,19 @@ void VulkanSpoofing::HookForVulkanSpoofing(HMODULE vulkanModule)
         {
             LOG_INFO("Attaching Vulkan device spoofing hooks");
 
-            DetourTransactionBegin();
-            DetourUpdateThread(GetCurrentThread());
+            HookBackend::Begin();
 
             if (o_vkGetPhysicalDeviceProperties)
-                DetourAttach(&(PVOID&) o_vkGetPhysicalDeviceProperties, hkvkGetPhysicalDeviceProperties);
+                HookBackend::Attach(&(PVOID&) o_vkGetPhysicalDeviceProperties, hkvkGetPhysicalDeviceProperties);
 
             if (o_vkGetPhysicalDeviceProperties2)
-                DetourAttach(&(PVOID&) o_vkGetPhysicalDeviceProperties2, hkvkGetPhysicalDeviceProperties2);
+                HookBackend::Attach(&(PVOID&) o_vkGetPhysicalDeviceProperties2, hkvkGetPhysicalDeviceProperties2);
 
             if (o_vkGetPhysicalDeviceProperties2KHR)
-                DetourAttach(&(PVOID&) o_vkGetPhysicalDeviceProperties2KHR, hkvkGetPhysicalDeviceProperties2KHR);
+                HookBackend::Attach(&(PVOID&) o_vkGetPhysicalDeviceProperties2KHR, hkvkGetPhysicalDeviceProperties2KHR);
 
-            auto detourResult = DetourTransactionCommit();
-            if (detourResult != NO_ERROR)
+            auto detourResult = HookBackend::Commit();
+            if (FAILED(detourResult))
             {
                 LOG_ERROR("Failed to attach Vulkan device spoofing hooks: {:X}", detourResult);
                 o_vkGetPhysicalDeviceProperties = nullptr;
@@ -1007,18 +1006,17 @@ void VulkanSpoofing::HookForVulkanExtensionSpoofing(HMODULE vulkanModule)
         {
             LOG_INFO("Attaching Vulkan extensions spoofing hooks");
 
-            DetourTransactionBegin();
-            DetourUpdateThread(GetCurrentThread());
+            HookBackend::Begin();
 
             if (o_vkEnumerateInstanceExtensionProperties)
-                DetourAttach(&(PVOID&) o_vkEnumerateInstanceExtensionProperties,
+                HookBackend::Attach(&(PVOID&) o_vkEnumerateInstanceExtensionProperties,
                              hkvkEnumerateInstanceExtensionProperties);
 
             if (o_vkEnumerateDeviceExtensionProperties)
-                DetourAttach(&(PVOID&) o_vkEnumerateDeviceExtensionProperties, hkvkEnumerateDeviceExtensionProperties);
+                HookBackend::Attach(&(PVOID&) o_vkEnumerateDeviceExtensionProperties, hkvkEnumerateDeviceExtensionProperties);
 
-            auto detourResult = DetourTransactionCommit();
-            if (detourResult != NO_ERROR)
+            auto detourResult = HookBackend::Commit();
+            if (FAILED(detourResult))
             {
                 LOG_ERROR("Failed to attach Vulkan extensions spoofing hooks: {:X}", detourResult);
                 o_vkEnumerateInstanceExtensionProperties = nullptr;
@@ -1048,21 +1046,20 @@ void VulkanSpoofing::HookForVulkanVRAMSpoofing(HMODULE vulkanModule)
         {
             LOG_INFO("Attaching Vulkan VRAM spoofing hooks");
 
-            DetourTransactionBegin();
-            DetourUpdateThread(GetCurrentThread());
+            HookBackend::Begin();
 
             if (o_vkGetPhysicalDeviceMemoryProperties != nullptr)
-                DetourAttach(&(PVOID&) o_vkGetPhysicalDeviceMemoryProperties, hkvkGetPhysicalDeviceMemoryProperties);
+                HookBackend::Attach(&(PVOID&) o_vkGetPhysicalDeviceMemoryProperties, hkvkGetPhysicalDeviceMemoryProperties);
 
             if (o_vkGetPhysicalDeviceMemoryProperties2 != nullptr)
-                DetourAttach(&(PVOID&) o_vkGetPhysicalDeviceMemoryProperties2, hkvkGetPhysicalDeviceMemoryProperties2);
+                HookBackend::Attach(&(PVOID&) o_vkGetPhysicalDeviceMemoryProperties2, hkvkGetPhysicalDeviceMemoryProperties2);
 
             if (o_vkGetPhysicalDeviceMemoryProperties2KHR != nullptr)
-                DetourAttach(&(PVOID&) o_vkGetPhysicalDeviceMemoryProperties2KHR,
+                HookBackend::Attach(&(PVOID&) o_vkGetPhysicalDeviceMemoryProperties2KHR,
                              hkvkGetPhysicalDeviceMemoryProperties2KHR);
 
-            auto detourResult = DetourTransactionCommit();
-            if (detourResult != NO_ERROR)
+            auto detourResult = HookBackend::Commit();
+            if (FAILED(detourResult))
             {
                 LOG_ERROR("Failed to attach Vulkan VRAM spoofing hooks: {:X}", detourResult);
                 o_vkGetPhysicalDeviceMemoryProperties = nullptr;

@@ -10,7 +10,7 @@
 
 #include "nvapi/NvApiHooks.h"
 
-#include "detours/detours.h"
+#include <hooks/HookBackend.h>
 
 #include <filesystem>
 #include <vulkan/vulkan.h>
@@ -111,20 +111,19 @@ inline static void HookNgxApi(HMODULE nvngx)
     {
         LOG_INFO("NVSDK_NGX_XXXXXX_GetFeatureRequirements found, hooking!");
 
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
+        HookBackend::Begin();
 
         if (Original_D3D11_GetFeatureRequirements != nullptr)
-            DetourAttach(&(PVOID&) Original_D3D11_GetFeatureRequirements, Hooked_Dx11_GetFeatureRequirements);
+            HookBackend::Attach(&(PVOID&) Original_D3D11_GetFeatureRequirements, Hooked_Dx11_GetFeatureRequirements);
 
         if (Original_D3D12_GetFeatureRequirements != nullptr)
-            DetourAttach(&(PVOID&) Original_D3D12_GetFeatureRequirements, Hooked_Dx12_GetFeatureRequirements);
+            HookBackend::Attach(&(PVOID&) Original_D3D12_GetFeatureRequirements, Hooked_Dx12_GetFeatureRequirements);
 
         if (Original_Vulkan_GetFeatureRequirements != nullptr)
-            DetourAttach(&(PVOID&) Original_Vulkan_GetFeatureRequirements, Hooked_Vulkan_GetFeatureRequirements);
+            HookBackend::Attach(&(PVOID&) Original_Vulkan_GetFeatureRequirements, Hooked_Vulkan_GetFeatureRequirements);
 
-        auto detourResult = DetourTransactionCommit();
-        if (detourResult != NO_ERROR)
+        auto detourResult = HookBackend::Commit();
+        if (FAILED(detourResult))
         {
             LOG_ERROR("Failed to hook NVSDK_NGX_XXXXXX_GetFeatureRequirements: {:X}", detourResult);
             Original_D3D11_GetFeatureRequirements = nullptr;
@@ -140,20 +139,19 @@ inline static void UnhookApis()
 
     if (Original_D3D11_GetFeatureRequirements != nullptr || Original_D3D12_GetFeatureRequirements != nullptr)
     {
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
+        HookBackend::Begin();
 
         if (Original_D3D11_GetFeatureRequirements != nullptr)
-            DetourDetach(&(PVOID&) Original_D3D11_GetFeatureRequirements, Hooked_Dx11_GetFeatureRequirements);
+            HookBackend::Detach(&(PVOID&) Original_D3D11_GetFeatureRequirements, Hooked_Dx11_GetFeatureRequirements);
 
         if (Original_D3D12_GetFeatureRequirements != nullptr)
-            DetourDetach(&(PVOID&) Original_D3D12_GetFeatureRequirements, Hooked_Dx12_GetFeatureRequirements);
+            HookBackend::Detach(&(PVOID&) Original_D3D12_GetFeatureRequirements, Hooked_Dx12_GetFeatureRequirements);
 
         if (Original_Vulkan_GetFeatureRequirements != nullptr)
-            DetourDetach(&(PVOID&) Original_Vulkan_GetFeatureRequirements, Hooked_Vulkan_GetFeatureRequirements);
+            HookBackend::Detach(&(PVOID&) Original_Vulkan_GetFeatureRequirements, Hooked_Vulkan_GetFeatureRequirements);
 
-        auto detourResult = DetourTransactionCommit();
-        if (detourResult != NO_ERROR)
+        auto detourResult = HookBackend::Commit();
+        if (FAILED(detourResult))
         {
             LOG_ERROR("Failed to unhook NVSDK_NGX_XXXXXX_GetFeatureRequirements: {:X}", detourResult);
         }
@@ -175,7 +173,7 @@ static feature_version GetVersionUsingNGXSnippet(const std::vector<std::string>&
     for (const auto& dll : dlls)
     {
         PFN_NVSDK_NGX_GetSnippetVersion _GetSnippetVersion =
-            (PFN_NVSDK_NGX_GetSnippetVersion) DetourFindFunction(dll.c_str(), "NVSDK_NGX_GetSnippetVersion");
+            (PFN_NVSDK_NGX_GetSnippetVersion) HookBackend::FindFunction(dll.c_str(), "NVSDK_NGX_GetSnippetVersion");
         if (_GetSnippetVersion)
         {
             LOG_TRACE("_GetSnippetVersion ptr from {}: {:X}", dll, (ULONG64) _GetSnippetVersion);

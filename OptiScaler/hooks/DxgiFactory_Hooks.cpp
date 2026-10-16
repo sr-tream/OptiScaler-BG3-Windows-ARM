@@ -16,7 +16,7 @@
 
 #include <d3d11.h>
 #include <magic_enum.hpp>
-#include <detours/detours.h>
+#include <hooks/HookBackend.h>
 
 // #define DETAILED_SC_LOGS
 
@@ -246,15 +246,14 @@ void DxgiFactoryHooks::HookToFactory(IDXGIFactory* pFactory)
 
     void** pFactoryVTable = *reinterpret_cast<void***>(real);
 
-    DetourTransactionBegin();
-    DetourUpdateThread(GetCurrentThread());
+    HookBackend::Begin();
 
     if (o_EnumAdapters == nullptr)
     {
         o_EnumAdapters = (PFN_EnumAdapters) pFactoryVTable[7];
 
         if (o_EnumAdapters != nullptr)
-            DetourAttach(&(PVOID&) o_EnumAdapters, DxgiFactoryHooks::EnumAdapters);
+            HookBackend::Attach(&(PVOID&) o_EnumAdapters, DxgiFactoryHooks::EnumAdapters);
     }
 
     if (o_CreateSwapChain == nullptr)
@@ -262,7 +261,7 @@ void DxgiFactoryHooks::HookToFactory(IDXGIFactory* pFactory)
         o_CreateSwapChain = (PFN_CreateSwapChain) pFactoryVTable[10];
 
         if (o_CreateSwapChain != nullptr)
-            DetourAttach(&(PVOID&) o_CreateSwapChain, DxgiFactoryHooks::CreateSwapChain);
+            HookBackend::Attach(&(PVOID&) o_CreateSwapChain, DxgiFactoryHooks::CreateSwapChain);
     }
 
     IDXGIFactory1* factory1 = nullptr;
@@ -275,7 +274,7 @@ void DxgiFactoryHooks::HookToFactory(IDXGIFactory* pFactory)
             o_EnumAdapters1 = (PFN_EnumAdapters1) pFactoryVTable[12];
 
             if (o_EnumAdapters1 != nullptr)
-                DetourAttach(&(PVOID&) o_EnumAdapters1, DxgiFactoryHooks::EnumAdapters1);
+                HookBackend::Attach(&(PVOID&) o_EnumAdapters1, DxgiFactoryHooks::EnumAdapters1);
         }
     }
 
@@ -289,7 +288,7 @@ void DxgiFactoryHooks::HookToFactory(IDXGIFactory* pFactory)
             o_CreateSwapChainForHwnd = (PFN_CreateSwapChainForHwnd) pFactoryVTable[15];
 
             if (o_CreateSwapChainForHwnd != nullptr)
-                DetourAttach(&(PVOID&) o_CreateSwapChainForHwnd, DxgiFactoryHooks::CreateSwapChainForHwnd);
+                HookBackend::Attach(&(PVOID&) o_CreateSwapChainForHwnd, DxgiFactoryHooks::CreateSwapChainForHwnd);
         }
 
         if (o_CreateSwapChainForCoreWindow == nullptr)
@@ -297,7 +296,7 @@ void DxgiFactoryHooks::HookToFactory(IDXGIFactory* pFactory)
             o_CreateSwapChainForCoreWindow = (PFN_CreateSwapChainForCoreWindow) pFactoryVTable[16];
 
             if (o_CreateSwapChainForCoreWindow != nullptr)
-                DetourAttach(&(PVOID&) o_CreateSwapChainForCoreWindow, DxgiFactoryHooks::CreateSwapChainForCoreWindow);
+                HookBackend::Attach(&(PVOID&) o_CreateSwapChainForCoreWindow, DxgiFactoryHooks::CreateSwapChainForCoreWindow);
         }
     }
 
@@ -311,7 +310,7 @@ void DxgiFactoryHooks::HookToFactory(IDXGIFactory* pFactory)
             o_EnumAdapterByLuid = (PFN_EnumAdapterByLuid) pFactoryVTable[26];
 
             if (o_EnumAdapterByLuid != nullptr)
-                DetourAttach(&(PVOID&) o_EnumAdapterByLuid, DxgiFactoryHooks::EnumAdapterByLuid);
+                HookBackend::Attach(&(PVOID&) o_EnumAdapterByLuid, DxgiFactoryHooks::EnumAdapterByLuid);
         }
     }
 
@@ -325,12 +324,12 @@ void DxgiFactoryHooks::HookToFactory(IDXGIFactory* pFactory)
             o_EnumAdapterByGpuPreference = (PFN_EnumAdapterByGpuPreference) pFactoryVTable[29];
 
             if (o_EnumAdapterByGpuPreference != nullptr)
-                DetourAttach(&(PVOID&) o_EnumAdapterByGpuPreference, DxgiFactoryHooks::EnumAdapterByGpuPreference);
+                HookBackend::Attach(&(PVOID&) o_EnumAdapterByGpuPreference, DxgiFactoryHooks::EnumAdapterByGpuPreference);
         }
     }
 
-    auto detourResult = DetourTransactionCommit();
-    if (detourResult != NO_ERROR)
+    auto detourResult = HookBackend::Commit();
+    if (FAILED(detourResult))
     {
         LOG_ERROR("Failed to hook IDXGIFactory: {:X}", detourResult);
         o_EnumAdapters = nullptr;
@@ -358,15 +357,14 @@ void DxgiFactoryHooks::HookToDLSSGFactory(IDXGIFactory* pFactory)
 
     void** pFactoryVTable = *reinterpret_cast<void***>(pFactory);
 
-    DetourTransactionBegin();
-    DetourUpdateThread(GetCurrentThread());
+    HookBackend::Begin();
 
     if (o_DLSSGCreateSwapChain == nullptr)
     {
         o_DLSSGCreateSwapChain = (PFN_CreateSwapChain) pFactoryVTable[10];
 
         if (o_DLSSGCreateSwapChain != nullptr)
-            DetourAttach(&(PVOID&) o_DLSSGCreateSwapChain, DxgiFactoryHooks::DLSSGCreateSwapChain);
+            HookBackend::Attach(&(PVOID&) o_DLSSGCreateSwapChain, DxgiFactoryHooks::DLSSGCreateSwapChain);
     }
 
     IDXGIFactory2* factory2 = nullptr;
@@ -379,7 +377,7 @@ void DxgiFactoryHooks::HookToDLSSGFactory(IDXGIFactory* pFactory)
             o_DLSSGCreateSwapChainForHwnd = (PFN_CreateSwapChainForHwnd) pFactoryVTable[15];
 
             if (o_DLSSGCreateSwapChainForHwnd != nullptr)
-                DetourAttach(&(PVOID&) o_DLSSGCreateSwapChainForHwnd, DxgiFactoryHooks::DLSSGCreateSwapChainForHwnd);
+                HookBackend::Attach(&(PVOID&) o_DLSSGCreateSwapChainForHwnd, DxgiFactoryHooks::DLSSGCreateSwapChainForHwnd);
         }
 
         if (o_DLSSGCreateSwapChainForCoreWindow == nullptr)
@@ -387,12 +385,12 @@ void DxgiFactoryHooks::HookToDLSSGFactory(IDXGIFactory* pFactory)
             o_DLSSGCreateSwapChainForCoreWindow = (PFN_CreateSwapChainForCoreWindow) pFactoryVTable[16];
 
             if (o_DLSSGCreateSwapChainForCoreWindow != nullptr)
-                DetourAttach(&(PVOID&) o_DLSSGCreateSwapChainForCoreWindow,
+                HookBackend::Attach(&(PVOID&) o_DLSSGCreateSwapChainForCoreWindow,
                              DxgiFactoryHooks::DLSSGCreateSwapChainForCoreWindow);
         }
     }
 
-    DetourTransactionCommit();
+    HookBackend::Commit();
 }
 
 HRESULT DxgiFactoryHooks::CreateSwapChain(IDXGIFactory* realFactory, IUnknown* pDevice, DXGI_SWAP_CHAIN_DESC* pDesc,

@@ -1,12 +1,12 @@
-﻿#include "pch.h"
+#include "pch.h"
 #include "Xell_Hooks.h"
-#include <detours/detours.h>
+#include <hooks/HookBackend.h>
 #include <magic_enum.hpp>
 #include <proxies/XeLL_Proxy.h>
 
 #define HOOK(name)                                                                                                     \
     if (o_##name)                                                                                                      \
-    DetourAttach(&(PVOID&) o_##name, hk##name)
+    HookBackend::Attach(&(PVOID&) o_##name, hk##name)
 
 bool XellHooks::Hook()
 {
@@ -33,8 +33,7 @@ bool XellHooks::Hook()
     o_xellSetLoggingCallback = XeLLProxy::SetLoggingCallback();
     o_xellD3D12CreateContext = XeLLProxy::D3D12CreateContext();
 
-    DetourTransactionBegin();
-    DetourUpdateThread(GetCurrentThread());
+    HookBackend::Begin();
 
     HOOK(xellDestroyContext);
     HOOK(xellSetSleepMode);
@@ -45,7 +44,7 @@ bool XellHooks::Hook()
     HOOK(xellSetLoggingCallback);
     HOOK(xellD3D12CreateContext);
 
-    DetourTransactionCommit();
+    HookBackend::Commit();
 
     return true;
 }

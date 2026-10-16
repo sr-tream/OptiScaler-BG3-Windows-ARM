@@ -1,193 +1,89 @@
-<div align="center">
+# OptiScaler for Baldur's Gate 3 on Windows ARM
 
-  ![Logo](https://github.com/user-attachments/assets/c7dad5da-0b29-4710-8a57-b58e4e407abd)
+**The purpose of this fork is to add FSR 3.1 upscaling to Baldur's Gate 3 on Windows ARM, using the game's Vulkan renderer.**
 
-</div>
-<hr />
-<br />
-<div align="center">
-  <a href="https://github.com/sponsors/cdozdil?frequency=one-time"><img src="images/gh-sponsor-red.png" /></a>
-  <a href="https://buymeacoffee.com/nitec"><img src="images/bmac.png" /></a>
-</div>
-<br />
+This experimental fork of [OptiScaler](https://github.com/optiscaler/OptiScaler) replaces BG3's native FSR 2.2 with FSR 3.1. It builds an ARM64EC proxy DLL for the x64 game running under Windows 11 ARM64 emulation. Development and testing have been on a Snapdragon / Adreno X1 system with the GOG version of BG3.
 
-## Table of Contents
+FSR 3 here means **upscaling**. Frame generation is not part of the verified setup. Better image quality or higher performance than native FSR 2.2 is not guaranteed; the replacement has used more GPU time in testing.
 
-**1.** [**About**](#about)  
-**2.** [**How it works?**](#how-it-works)  
-**3.** [**Supported APIs and Upscalers**](#which-apis-and-upscalers-are-supported)  
-**4.** [**Installation**](#installation)  
-**5.** [**Known Issues**](#known-issues)  
-**6.** [**Compilation and Credits**](#compilation)  
-**7.** [**Wiki**](https://github.com/optiscaler/OptiScaler/wiki)
+## What this fork changes
 
-<br />
-<div align="center">
-  <a href="https://discord.gg/wEyd9w4hG5"><img src="https://img.shields.io/badge/OptiScaler-blue?style=for-the-badge&logo=discord&logoColor=white&logoSize=auto&color=5865F2" alt="Discord invite"></a>
-  <a href="https://github.com/optiscaler/OptiScaler/releases/latest"><img src="https://img.shields.io/badge/Download-Stable-green?style=for-the-badge&logo=github&logoSize=auto" alt="Stable release"></a>
-  <a href="https://github.com/optiscaler/OptiScaler/releases/tag/nightly"><img src="https://img.shields.io/badge/Download-Nightly-purple?style=for-the-badge&logo=github&logoSize=auto" alt="Nightly release"></a>
-  <a href="https://github.com/optiscaler/OptiScaler/wiki"><img src="https://img.shields.io/badge/Documentation-blue?style=for-the-badge&logo=gitbook&logoColor=white&logoSize=auto" alt="Wiki"></a>
-</div>
-<div align="center">
-  <a href="https://github.com/optiscaler/OptiScaler/releases"><img src="https://img.shields.io/github/downloads/optiscaler/optiscaler/total?style=for-the-badge&logo=gitextensions&logoSize=auto&label=Total" alt="Total DL"></a>
-  <a href="https://github.com/optiscaler/OptiScaler/releases/latest"><img src="https://img.shields.io/github/downloads/optiscaler/optiscaler/latest/total?style=for-the-badge&logo=gitextensions&logoSize=auto&label=Stable&color=green&logoColor=white" alt="Stable DL"></a>
-  <a href="https://github.com/optiscaler/OptiScaler/releases/tag/nightly"><img src="https://img.shields.io/github/downloads/optiscaler/OptiScaler/nightly/total?style=for-the-badge&logo=gitextensions&logoColor=white&logoSize=auto&label=Nightly&color=purple" alt="Nightly DL"></a>
-  <a href="https://github.com/optiscaler/OptiScaler/stargazers"><img src="https://img.shields.io/github/stars/optiscaler/optiscaler?style=for-the-badge&logo=githubsponsors&logoColor=white&label=S.T.A.R.S." alt="Stars"></a>
-</div>
+- Replaces Microsoft Detours with **KNSoft.SlimDetours**, including mixed x64 / ARM64EC hooking and x64-compatible proxy exports.
+- Intercepts BG3's native Vulkan FSR 2.2 passes. It supplies the replacement with the game's color, depth, motion vectors, jitter, exposure, reactive mask, and transparency/composition mask.
+- Supports the tested Vulkan FSR 3.1 backend and the built-in FSR 2.1.2 / 2.2.1 alternatives through OptiScaler's menu.
+- Skips redundant native Reconstruct, DepthClip, Lock, and Accumulate dispatches when the replacement succeeds. The native mask generation pass remains necessary. With replacement auto exposure explicitly enabled, native luminance generation can also be skipped.
+- Retains the original native commands for fallback if a replacement cannot be recorded safely, and keeps replacement contexts alive until submitted GPU work finishes.
+- Keeps the game's native Vulkan swapchain when frame generation is disabled and defers cursor changes to the window thread.
 
+Temporary GPU tracing, memory dumps, the render-task tracing hook, and automatic A/B profiling have been removed. Normal OptiScaler logging and its timing overlay remain available.
 
-## About
+## Supported setup
 
-**OptiScaler** is a tool that lets you replace upscalers in games that ***already support DLSS2+ / FSR2+ / XeSS*** ($`^1`$), as well as manage ***frame generation*** in already mentioned games _(either by replacing existing FG options or enabling it in DX12 games through experimental ***OptiFG***)_. It also offers extensive customization options for all users, including those with Nvidia GPUs using DLSS.
+The native integration is deliberately limited to the verified **Vulkan `bg3.exe`** build and shader signatures. A different executable or shader build disables this integration rather than guessing offsets. The tested executable has SHA-256:
 
-> [!CAUTION]
-> * We've been informed about some **FAKE websites** presenting themselves as OptiScaler team, so we would like to strongly highlight that we **DO NOT HAVE an official website!**  
-> * We **DON'T have an official manager app**, so please be careful when downloading or using them! And please don't bother us to provide support for something which isn't even ours!
-> * Only **LEGIT places** are this Github, our Discord server and Nitec's NexusMods page.  
-> * OptiScaler is **FREE**, any kind of monetary requirements are scams!  
+```text
+B275FE5207E680F2046BB1A1D4C4B98E4E5C5A0BB455415F987E07F98B3048A6
+```
 
-> [!TIP]
-> _For example, if a game has DLSS only, OptiScaler can be used to replace DLSS with XeSS or FSR 3.1 (also works for FSR2-only games, like The Outer Worlds Spacer's Choice, albeit requires manually providing nvngx_dlss.dll)._
+The tested AMD Vulkan runtime is `OptiScaler/amd_fidelityfx_vk.dll`, exposing FSR **3.1.4** and **2.3.3**. Its SHA-256 is:
 
-**Key aspects of OptiScaler:**
-- Enables usage of XeSS, FSR2, FSR3, **FSR4**$`^2`$ (_officially, RDNA4 and RDNA3 dGPUs only_) and DLSS in (temporal) upscaler-enabled games
-- Allows users to fine-tune their upscaling experience with a wide range of tweaks and enhancements (RCAS & MAS, Output Scaling, DLSS Presets, Ratio & DRS Overrides etc.)
-- Since v0.7.0+, added ***experimental DX12*** frame generation support with possible HUDfix solution ([**OptiFG**](#optifg--hudfix-experimental-hud-ghosting-fix))
-- Supports [**Fakenvapi**](#installation) integration - enables Reflex hooking and injecting _Anti-Lag 2_ (RDNA1+ only), _LatencyFlex_ (LFX) or _XeLL_ - _bundled since 0.9_  
-- Since v0.7.7, added support for **Nukem's** FSR3-FG mod [**dlssg-to-fsr3**](#installation), only supports games with ***native DLSS-FG*** - _bundled since 0.9_
-- Since v0.7.8, added **ASI plugin loading** support (_disabled_ by default (`LoadAsiPlugins=` in INI), loads from customisable folder, default `plugins`)
-- New project - [**OptiPatcher**](https://github.com/optiscaler/OptiPatcher) - an ASI Plugin for OptiScaler for enabling DLSS and DLSSG inputs without spoofing in ***supported games***.
-- Since v0.7.8, OptiScaler is now automatically applying certain game patches for a better out-of-the-box experience
-- Since v0.9.0, separated FG Inputs and Outputs, added XeFG and FSR4-FG support, as well as bundled Fakenvapi and Nukem's FSR3-FG mod
-- For a detailed list of all features, check [Features](Features.md)
+```text
+A1624CC4238FEF046F30C4D80CE3F47BE63FC5F5373F49E3EE9EDB9960F54C78
+```
 
-
-> [!IMPORTANT]
-> _**Always check the [Wiki Compatibility list](https://github.com/optiscaler/OptiScaler/wiki) for known game issues and workarounds.**_  
-> Also please check the  [***OptiScaler known issues***](#known-issues) at the end regarding **RTSS** compatibility.  
-> A separate [***FSR4 Compatibility list***](https://github.com/optiscaler/OptiScaler/wiki/FSR4-Compatibility-List) is available for community-sourced tested games.  
-> ***[3]** For **not bundled** items, please check [Installation](#installation).*  
-
-> [!NOTE]
-> ### Upscaler notes
-> <details>
->  <summary><b>Click for [1], [2] </b></summary>  
->  
-> **[1]** For **Unreal Engine** games, only UE XeSS -> Opti XeSS/FSR4 work  
->  
-> *Regarding **XeSS** inputs, since **Unreal Engine plugin** does not provide depth, replacing in-game XeSS breaks other upscalers (e.g. Redout 2 as a XeSS-only game), but you can still apply RCAS sharpening to XeSS to reduce blurry visuals.* 
->
-> *Regarding **FSR inputs**, FSR 3.1 is the first version with a fully standardised, forward-looking API and should be fully supported. Since FSR2 and FSR3 support custom interfaces, game support will depend on the developers' implementation. With Unreal Engine games, you might need [ini tweaks](https://github.com/optiscaler/OptiScaler/wiki/Unreal-Engine-Tweaks) for FSR inputs.*  
->
-> **[2]** *Regarding **FSR4**, please check [FSR4 Compatibility list](https://github.com/optiscaler/OptiScaler/wiki/FSR4-Compatibility-List) for known supported games and general info.*
-> 
-> </details>
-
-
-## Official Discord Server: [OptiScaler](https://discord.gg/wEyd9w4hG5)
-
-*This project is based on [PotatoOfDoom](https://github.com/PotatoOfDoom)'s excellent [CyberFSR2](https://github.com/PotatoOfDoom/CyberFSR2).*
-
-## How it works?
-* OptiScaler acts as a middleware, it intercepts upscaler calls from the game (_**Inputs**_) and redirects them to the chosen upscaling backend (_**Output**_), allowing user to replace one technology with another one. **Inputs -> OptiScaler -> Outputs**  
-* _Or put more bluntly, **Input** is the upscaler used in game settings, and **Output** the one selected in Opti Overlay._
-* _Same goes for FG options which are separated into **FG Input** and **FG Output**._
-
-> [!NOTE]
-> * Pressing **`Insert`** should open the Optiscaler **Overlay** in-game with all of the options (_`ShortcutKey=` can be changed in the INI file, or under **Keybinds** in the overlay_). 
-> * Pressing **`Page Up`** shows the performance stats overlay in the top left, and can be cycled between different modes with **`Page Down`** (_keybinds customisable in the overlay_).  
-> * If Opti overlay is instantly disappearing after trying Insert a few times, maybe try **`Alt + Insert`** ([reported workaround](https://github.com/optiscaler/OptiScaler/issues/484) for alternate keyboard layouts).
-
-![inputs_and_outputs](https://github.com/user-attachments/assets/7ff37fd7-515f-488d-99ff-faa586e206fc)
-
-## Which APIs and Upscalers are Supported?
-Currently **OptiScaler** can be used with DirectX 11, DirectX 12 and Vulkan, but each API has different sets of supported upscalers.  
-[**OptiFG**](#optifg--hudfix-experimental-hud-ghosting-fix) currently **only supports DX12** and is explained in a separate paragraph.
-
-#### For DirectX 12
-- XeSS (Default)
-- FSR 2.1.2, 2.2.1
-- FSR 3.X (and FSR 2.3.X)
-- FSR 4.X (via FSR 3.X/4, _officially RDNA4 and RDNA3 dGPUs only_)
-- DLSS
-
-#### For DirectX 11
-- FSR 2.2.1 (Default, native DX11)
-- FSR 3.1.2 (unofficial port to native DX11)
-- DLSS (native DX11)
-- XeSS 2.X (native DX11, _Intel ARC only_)
-- XeSS, FSR 2.1.2, 2.2.1, FSR 3.X w/Dx12 (_via D3D11on12_)$`^1`$
-- FSR 4.X (via FSR 3.X/4 w/Dx12 interop, _officially RDNA4 and RDNA3 dGPUs only_)
-
-> [!NOTE]
-> <details>
->  <summary><b>Expand for [1]</b></summary>
->
-> _**[1]** These implementations use a background DirectX12 device to be able to use DX12-only upscalers. There's a performance penalty up to 10-ish % for this method, but allows many more upscaler options. Also native DX11 implementation of FSR 2.2.1 is a backport from Unity renderer and has its own problems of which some were fixed by OptiScaler._
-> </details>
-
-#### For Vulkan
-- FSR 4.X (via FSR 3.X/4 w/Dx12 interop, _officially RDNA4 and RDNA3 dGPUs only_)
-- FSR2 2.1.2 (Default), 2.2.1
-- FSR3 3.1 (and FSR2 2.3.2)
-- DLSS
-- XeSS 2.x
-
-#### OptiFG + HUDfix (experimental HUD ghosting fix) 
-**OptiFG** was added with **v0.7** and is **only supported in DX12**. 
-It's an **experimental** way of adding FG to games without native Frame Generation, or can also be used as a last case scenario if the native FG is not working properly.  
-* Currently supports FSR3-FG (requires HUDfix to avoid HUD ghosting), XeFG and FSR4-FG (ML model deals with the HUD, so may or may not require HUDfix).
-
-For more information on OptiFG and how to use it, please check the Wiki page - [OptiFG](https://github.com/optiscaler/OptiScaler/wiki/OptiFG).
-
+DX12-only choices, including the tested FSR 3.1.5 DX12 runtime, cannot be used by this native Vulkan bridge. Steam builds, other BG3 patches, other ARM GPUs, and frame generation have not been validated. Minimize/restore and backend changes received fixes during development, but this remains an experimental integration; an unexplained focus/minimize event was observed in one profiling run.
 
 ## Installation
-> [!CAUTION]
-> _**Warning**: **Do not use this mod with online games.** It may trigger anti-cheat software and cause bans!_
 
-> [!IMPORTANT]
-> **For installation steps, please check the [**Wiki**](https://github.com/optiscaler/OptiScaler/wiki)**  
+1. Close BG3 and back up any existing OptiScaler files and configuration in the game's `bin` folder.
+2. Start with an [upstream OptiScaler distribution](https://github.com/optiscaler/OptiScaler/releases) containing the Vulkan AMD runtime. Keep its dependency folder beside the game executable. Match the tested runtime above when reproducing this setup.
+3. Place this fork's built DLL beside `bg3.exe`, named **`winmm.dll`**. Replace an existing OptiScaler proxy rather than loading two copies. Keep `OptiScaler.ini` beside it.
+4. Merge the following settings into the corresponding sections of `OptiScaler.ini`:
 
-## Configuration
-Please check [this](Config.md) document for configuration parameters and explanations. If your GPU is not an Nvidia one, check [GPU spoofing options](Spoofing.md) *(Will be updated)*
+```ini
+[Inputs]
+ReplaceBg3Fsr2=true
+OptimizeBg3Fsr2=true
 
-## Known Issues
+[Upscalers]
+VulkanUpscaler=ffx
 
-> [!NOTE]
-> **For a list of known issues, please check the [**Wiki**](https://github.com/optiscaler/OptiScaler/wiki)**.
-> 
-> Also worth checking the [Compatibility List](https://github.com/optiscaler/OptiScaler/wiki/Compatibility-List) for possible game issues and their fixes.
+[FrameGen]
+Enabled=false
+```
 
-## Compilation
+5. Launch BG3 with **Vulkan** and select **FSR 2.2 in the game's graphics settings**. Leave that selected: it provides the native inputs intercepted by this fork.
+6. Press **Insert** to open OptiScaler. Select the Vulkan FSR 3.1 backend/version available from the tested AMD runtime. The game will still report FSR 2.2 because replacement happens underneath it.
 
-### Requirements
-* Visual Studio 2022
+To let the replacement compute its own exposure and skip the native luminance pass, optionally add:
 
-### Instructions
-* Clone this repo with **all of its submodules**.
-* Open the OptiScaler.sln with Visual Studio 2022.
-* Build the project
+```ini
+[InitFlags]
+AutoExposure=true
+```
 
-## Thanks
-* @PotatoOfDoom for CyberFSR2
-* @Artur for DLSS Enabler and helping me implement NVNGX api correctly
-* @LukeFZ & @Nukem for their great mods and sharing their knowledge 
-* @FakeMichau for continous support, testing and feature creep
-* @QM for continous testing efforts and helping me to reach games
-* @TheRazerMD for continous testing and support
-* @Cryio, @krispy, @krisshietala, @Lordubuntu, @scz, @Veeqo for their hard work on (now outdated) [compatibility matrix](https://docs.google.com/spreadsheets/d/1qsvM0uRW-RgAYsOVprDWK2sjCqHnd_1teYAx00_TwUY)
-* And the whole DLSS2FSR community for all their support
+Auto exposure can change the image. Without that explicit option, native exposure generation is retained. Mask generation is retained in both cases because the replacement uses its results. For comparison with the original game, close BG3 and set `ReplaceBg3Fsr2=false` before launching it again.
 
-## Credit
-This project uses [FreeType](https://gitlab.freedesktop.org/freetype/freetype) licensed under the [FTL](https://gitlab.freedesktop.org/freetype/freetype/-/blob/master/docs/FTL.TXT)
+## Building
 
-## Sponsors
-<table>
- <tbody>
-  <tr>
-   <td align="center"><img alt="[SignPath]" src="https://avatars.githubusercontent.com/u/34448643" height="30"/></td>
-   <td>Free code signing on Windows provided by <a href="https://signpath.io/">SignPath.io</a>, certificate by <a href="https://signpath.org/">SignPath Foundation</a></td>
-  </tr>
- </tbody>
-</table>
+Clone this fork with its submodules:
 
+```powershell
+git clone --recurse-submodules https://github.com/sr-tream/OptiScaler-BG3-Windows-ARM.git
+cd OptiScaler-BG3-Windows-ARM
+.\Build-SlimDetours.ps1
+```
+
+The tested toolchain is Visual Studio 2026 Community, MSVC v145, ARM64EC C++ tools, and Windows SDK 10.0.26100.0, on Windows ARM64. The script discovers Visual Studio with `vswhere`; `-VisualStudio` and `-Toolset` can override its choices. Other toolchains have not been verified.
+
+The output is `ARM64EC/Release/OptiScaler.dll`; rename the copy used by BG3 to `winmm.dll`. Proxy forwarding is intentionally compiled as x64 while the main DLL uses ARM64EC. Preserve that per-file setting.
+
+The vendored SlimDetours headers and static libraries are from KNSoft.SlimDetours 1.2.3-beta. Package provenance and its MIT license are in [`external/SlimDetours`](external/SlimDetours).
+
+Regression and GPU smoke tests are in [`tests`](tests). They cover mixed-architecture hooks, command replay, GPU resource lifetime, cursor focus behavior, DLL/Vulkan loading, the overlay, and synthetic native-format frames with both masks. The test scripts currently target Windows ARM64 with the documented MSVC/SDK versions; GPU tests require the AMD Vulkan runtime from an OptiScaler distribution. They do not establish performance or visual correctness in every BG3 scene.
+
+## Upstream and license
+
+This is an independent experimental fork. See the preserved [upstream README](README.upstream.md) and [OptiScaler wiki](https://github.com/optiscaler/OptiScaler/wiki) for the original project and general configuration. General upstream compatibility claims should not be read as validation of this ARM64EC fork.
+
+OptiScaler's [GPL-3.0 license](LICENSE) is retained. Credit belongs to the OptiScaler contributors, [KNSoft.SlimDetours](https://github.com/KNSoft/KNSoft.SlimDetours), and the respective FidelityFX and other dependency authors. BG3 binaries, game shaders, diagnostic dumps, and proprietary game assets are not included.

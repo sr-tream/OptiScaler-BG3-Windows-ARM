@@ -36,27 +36,11 @@ void BeginCursorClipBlockLocked()
     LOG_INFO("begin cursor clip block input:{} target:{}", static_cast<void*>(_state.InputHwnd),
              static_cast<void*>(_state.TargetHwnd));
 
-    RECT currentClip {};
-
-    _state.HasSavedClipRect = false;
-    _state.SavedClipWasActive = false;
-    _state.SavedClipRect = {};
-
-    if (o_GetClipCursor != nullptr && o_GetClipCursor(&currentClip))
-    {
-        _state.SavedClipRect = currentClip;
-        _state.HasSavedClipRect = true;
-        _state.SavedClipWasActive = !IsVirtualScreenRect(currentClip);
-    }
-
-    _state.DeferredClipRect = {};
-    _state.HasDeferredClipRect = false;
-    _state.DeferredClipIsNull = false;
-
-    if (o_ClipCursor != nullptr)
-        o_ClipCursor(nullptr);
-
+    // Cursor APIs can synchronously involve the window thread. Never call them
+    // while holding input state, or from the render thread at focus restoration.
     _state.CursorClipReleasedForMenu = true;
+    _state.CursorClipApplyPending = true;
+    ++_state.CursorClipGeneration;
 }
 
 void EndCursorClipBlockLocked()
@@ -68,39 +52,117 @@ void EndCursorClipBlockLocked()
              _state.HasDeferredClipRect ? 1 : 0, _state.DeferredClipIsNull ? 1 : 0, _state.HasSavedClipRect ? 1 : 0,
              _state.SavedClipWasActive ? 1 : 0);
 
-    if (_state.HasDeferredClipRect)
-    {
-        if (_state.DeferredClipIsNull)
-        {
-            if (o_ClipCursor != nullptr)
-                o_ClipCursor(nullptr);
-        }
-        else
-        {
-            if (o_ClipCursor != nullptr)
-                o_ClipCursor(&_state.DeferredClipRect);
-        }
-    }
-    else if (_state.HasSavedClipRect && _state.SavedClipWasActive)
-    {
-        if (o_ClipCursor != nullptr)
-            o_ClipCursor(&_state.SavedClipRect);
-    }
-    else
-    {
-        if (o_ClipCursor != nullptr)
-            o_ClipCursor(nullptr);
-    }
-
-    _state.SavedClipRect = {};
-    _state.HasSavedClipRect = false;
-    _state.SavedClipWasActive = false;
-
-    _state.DeferredClipRect = {};
-    _state.HasDeferredClipRect = false;
-    _state.DeferredClipIsNull = false;
-
     _state.CursorClipReleasedForMenu = false;
+    _state.CursorClipApplyPending = true;
+    ++_state.CursorClipGeneration;
+}
+
+static UINT CursorClipMessage()
+{
+    static const UINT message = RegisterWindowMessageW(L"OptiScaler.ApplyCursorClipPolicy.v1");
+    return message;
+}
+
+void ScheduleCursorClipPolicy()
+{
+    const UINT message = CursorClipMessage();
+    HWND hwnd = nullptr;
+    {
+        std::unique_lock lock(_state.Mutex);
+        if (!message || !_state.CursorClipApplyPending || _state.CursorClipMessagePosted)
+            return;
+        hwnd = _state.InputHwnd;
+        if (!hwnd)
+            return;
+        _state.CursorClipMessagePosted = true;
+    }
+    // Both the subclass and Peek/GetMessage hooks consume the private message,
+    // including games which replace our window subclass after initialization.
+    if (!o_PostMessageW(hwnd, message, 0, 0))
+    {
+        std::unique_lock lock(_state.Mutex);
+        _state.CursorClipMessagePosted = false;
+    }
+}
+
+bool ProcessCursorClipMessage(HWND hwnd, UINT message)
+{
+    if (!message || message != CursorClipMessage())
+        return false;
+    {
+        std::unique_lock lock(_state.Mutex);
+        if (hwnd != _state.InputHwnd)
+            return false;
+        _state.CursorClipMessagePosted = false;
+    }
+    static std::mutex effectsMutex;
+    std::unique_lock effects(effectsMutex, std::try_to_lock);
+    if (!effects.owns_lock())
+        return true;
+
+    for (unsigned attempt = 0; attempt < 4; ++attempt)
+    {
+        bool release = false, capture = false;
+        std::uint64_t generation = 0;
+        {
+            std::unique_lock lock(_state.Mutex);
+            if (!_state.CursorClipApplyPending)
+                break;
+            generation = _state.CursorClipGeneration;
+            release = _state.CursorClipReleasedForMenu;
+            if (!release && !_state.CursorClipApplied && !_state.HasDeferredClipRect)
+            {
+                _state.CursorClipApplyPending = false;
+                break;
+            }
+            capture = release && !_state.HasSavedClipRect;
+        }
+        RECT currentClip {};
+        const bool captured = capture && o_GetClipCursor && o_GetClipCursor(&currentClip);
+        const bool savedActive = captured && !IsVirtualScreenRect(currentClip);
+        RECT restore {};
+        bool restoreRect = false;
+        {
+            std::unique_lock lock(_state.Mutex);
+            if (generation != _state.CursorClipGeneration)
+                continue;
+            if (captured)
+            {
+                _state.SavedClipRect = currentClip;
+                _state.HasSavedClipRect = true;
+                _state.SavedClipWasActive = savedActive;
+            }
+            if (!release)
+            {
+                if (_state.HasDeferredClipRect)
+                {
+                    restoreRect = !_state.DeferredClipIsNull;
+                    restore = _state.DeferredClipRect;
+                }
+                else if (_state.HasSavedClipRect && _state.SavedClipWasActive)
+                {
+                    restoreRect = true;
+                    restore = _state.SavedClipRect;
+                }
+            }
+            _state.CursorClipApplyPending = false;
+        }
+        // No input mutex is held across either Windows cursor API.
+        const bool applied = o_ClipCursor && o_ClipCursor(restoreRect ? &restore : nullptr);
+        {
+            std::unique_lock lock(_state.Mutex);
+            if (applied)
+                _state.CursorClipApplied = release;
+            if (generation == _state.CursorClipGeneration && !release)
+            {
+                _state.SavedClipRect = {}; _state.HasSavedClipRect = false; _state.SavedClipWasActive = false;
+                _state.DeferredClipRect = {}; _state.HasDeferredClipRect = false; _state.DeferredClipIsNull = false;
+            }
+        }
+        LOG_DEBUG("cursor clip applied on window thread; generation:{} released:{}", generation, release);
+    }
+    ScheduleCursorClipPolicy();
+    return true;
 }
 
 void StoreDeferredClipCursorLocked(const RECT* rect)

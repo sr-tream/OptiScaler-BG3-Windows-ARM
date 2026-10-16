@@ -18,6 +18,14 @@ class OwnedMutex
         owner.store(_owner, std::memory_order_release);
     }
 
+    bool try_lock(uint32_t _owner)
+    {
+        if (!mtx.try_lock())
+            return false;
+        owner.store(_owner, std::memory_order_release);
+        return true;
+    }
+
     // Only unlocks if owner matches
     void unlockThis(uint32_t _owner)
     {
@@ -49,4 +57,15 @@ class OwnedLockGuard
     }
 
     ~OwnedLockGuard() { _mutex.unlockThis(_owner_id); }
+};
+
+class OwnedTryLockGuard
+{
+    OwnedMutex& mutex;
+    uint32_t owner;
+    bool locked;
+  public:
+    OwnedTryLockGuard(OwnedMutex& m, uint32_t id) : mutex(m), owner(id), locked(m.try_lock(id)) {}
+    ~OwnedTryLockGuard() { if (locked) mutex.unlockThis(owner); }
+    explicit operator bool() const { return locked; }
 };

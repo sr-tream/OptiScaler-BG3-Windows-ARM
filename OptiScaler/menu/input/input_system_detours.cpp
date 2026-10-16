@@ -3,7 +3,7 @@
 
 #include <hooks/Kernel_Hooks.h>
 
-#include <detours/detours.h>
+#include <hooks/HookBackend.h>
 
 #include <tlhelp32.h>
 #include <vector>
@@ -272,17 +272,16 @@ bool InstallHooks()
 
     if (!messageHooks)
     {
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
+        HookBackend::Begin();
 
-        DetourAttach(reinterpret_cast<PVOID*>(&o_PeekMessageA), hkPeekMessageA);
-        DetourAttach(reinterpret_cast<PVOID*>(&o_PeekMessageW), hkPeekMessageW);
-        DetourAttach(reinterpret_cast<PVOID*>(&o_GetMessageA), hkGetMessageA);
-        DetourAttach(reinterpret_cast<PVOID*>(&o_GetMessageW), hkGetMessageW);
+        HookBackend::Attach(reinterpret_cast<PVOID*>(&o_PeekMessageA), hkPeekMessageA);
+        HookBackend::Attach(reinterpret_cast<PVOID*>(&o_PeekMessageW), hkPeekMessageW);
+        HookBackend::Attach(reinterpret_cast<PVOID*>(&o_GetMessageA), hkGetMessageA);
+        HookBackend::Attach(reinterpret_cast<PVOID*>(&o_GetMessageW), hkGetMessageW);
 
-        const LONG result = DetourTransactionCommit();
+        const HRESULT result = HookBackend::Commit();
 
-        messageHooks = result == NO_ERROR;
+        messageHooks = SUCCEEDED(result);
         if (messageHooks)
             LOG_INFO("Win32 message hooks installed");
         else
@@ -291,16 +290,15 @@ bool InstallHooks()
 
     if (!keyStateHooks)
     {
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
+        HookBackend::Begin();
 
-        DetourAttach(reinterpret_cast<PVOID*>(&o_GetAsyncKeyState), hkGetAsyncKeyState);
-        DetourAttach(reinterpret_cast<PVOID*>(&o_GetKeyState), hkGetKeyState);
-        DetourAttach(reinterpret_cast<PVOID*>(&o_GetKeyboardState), hkGetKeyboardState);
+        HookBackend::Attach(reinterpret_cast<PVOID*>(&o_GetAsyncKeyState), hkGetAsyncKeyState);
+        HookBackend::Attach(reinterpret_cast<PVOID*>(&o_GetKeyState), hkGetKeyState);
+        HookBackend::Attach(reinterpret_cast<PVOID*>(&o_GetKeyboardState), hkGetKeyboardState);
 
-        const LONG result = DetourTransactionCommit();
+        const HRESULT result = HookBackend::Commit();
 
-        keyStateHooks = result == NO_ERROR;
+        keyStateHooks = SUCCEEDED(result);
         if (keyStateHooks)
             LOG_INFO("Win32 key state hooks installed");
         else
@@ -309,15 +307,14 @@ bool InstallHooks()
 
     if (!getPosHooks)
     {
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
+        HookBackend::Begin();
 
-        DetourAttach(reinterpret_cast<PVOID*>(&o_GetMessagePos), hkGetMessagePos);
-        DetourAttach(reinterpret_cast<PVOID*>(&o_GetMouseMovePointsEx), hkGetMouseMovePointsEx);
+        HookBackend::Attach(reinterpret_cast<PVOID*>(&o_GetMessagePos), hkGetMessagePos);
+        HookBackend::Attach(reinterpret_cast<PVOID*>(&o_GetMouseMovePointsEx), hkGetMouseMovePointsEx);
 
-        const LONG result = DetourTransactionCommit();
+        const HRESULT result = HookBackend::Commit();
 
-        getPosHooks = result == NO_ERROR;
+        getPosHooks = SUCCEEDED(result);
         if (getPosHooks)
             LOG_INFO("Win32 GetMessagePos hooks installed");
         else
@@ -326,15 +323,14 @@ bool InstallHooks()
 
     if (!clipCursorHooks)
     {
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
+        HookBackend::Begin();
 
-        DetourAttach(reinterpret_cast<PVOID*>(&o_ClipCursor), hkClipCursor);
-        DetourAttach(reinterpret_cast<PVOID*>(&o_GetClipCursor), hkGetClipCursor);
+        HookBackend::Attach(reinterpret_cast<PVOID*>(&o_ClipCursor), hkClipCursor);
+        HookBackend::Attach(reinterpret_cast<PVOID*>(&o_GetClipCursor), hkGetClipCursor);
 
-        const LONG result = DetourTransactionCommit();
+        const HRESULT result = HookBackend::Commit();
 
-        clipCursorHooks = result == NO_ERROR;
+        clipCursorHooks = SUCCEEDED(result);
         if (clipCursorHooks)
             LOG_INFO("Win32 clip cursor hooks installed");
         else
@@ -343,19 +339,18 @@ bool InstallHooks()
 
     if (!message2Hooks)
     {
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
+        HookBackend::Begin();
 
-        DetourAttach(reinterpret_cast<PVOID*>(&o_SendInput), hkSendInput);
-        DetourAttach(reinterpret_cast<PVOID*>(&o_mouse_event), hkmouse_event);
-        DetourAttach(reinterpret_cast<PVOID*>(&o_PostMessageA), hkPostMessageA);
-        DetourAttach(reinterpret_cast<PVOID*>(&o_PostMessageW), hkPostMessageW);
-        DetourAttach(reinterpret_cast<PVOID*>(&o_SendMessageA), hkSendMessageA);
-        DetourAttach(reinterpret_cast<PVOID*>(&o_SendMessageW), hkSendMessageW);
+        HookBackend::Attach(reinterpret_cast<PVOID*>(&o_SendInput), hkSendInput);
+        HookBackend::Attach(reinterpret_cast<PVOID*>(&o_mouse_event), hkmouse_event);
+        HookBackend::Attach(reinterpret_cast<PVOID*>(&o_PostMessageA), hkPostMessageA);
+        HookBackend::Attach(reinterpret_cast<PVOID*>(&o_PostMessageW), hkPostMessageW);
+        HookBackend::Attach(reinterpret_cast<PVOID*>(&o_SendMessageA), hkSendMessageA);
+        HookBackend::Attach(reinterpret_cast<PVOID*>(&o_SendMessageW), hkSendMessageW);
 
-        const LONG result = DetourTransactionCommit();
+        const HRESULT result = HookBackend::Commit();
 
-        message2Hooks = result == NO_ERROR;
+        message2Hooks = SUCCEEDED(result);
         if (message2Hooks)
             LOG_INFO("Win32 message hooks installed");
         else
@@ -365,18 +360,17 @@ bool InstallHooks()
 #ifdef USE_HID_HOOKS
     if (!State::Instance().isRunningOnLinux && !hidHooks)
     {
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
+        HookBackend::Begin();
 
-        DetourAttach(reinterpret_cast<PVOID*>(&o_CreateFileA), hkCreateFileA);
-        DetourAttach(reinterpret_cast<PVOID*>(&o_CreateFileW), hkCreateFileW);
-        DetourAttach(reinterpret_cast<PVOID*>(&o_ReadFile), hkReadFile);
-        DetourAttach(reinterpret_cast<PVOID*>(&o_DeviceIoControl), hkDeviceIoControl);
-        DetourAttach(reinterpret_cast<PVOID*>(&o_CloseHandle), hkCloseHandle);
+        HookBackend::Attach(reinterpret_cast<PVOID*>(&o_CreateFileA), hkCreateFileA);
+        HookBackend::Attach(reinterpret_cast<PVOID*>(&o_CreateFileW), hkCreateFileW);
+        HookBackend::Attach(reinterpret_cast<PVOID*>(&o_ReadFile), hkReadFile);
+        HookBackend::Attach(reinterpret_cast<PVOID*>(&o_DeviceIoControl), hkDeviceIoControl);
+        HookBackend::Attach(reinterpret_cast<PVOID*>(&o_CloseHandle), hkCloseHandle);
 
-        const LONG result = DetourTransactionCommit();
+        const HRESULT result = HookBackend::Commit();
 
-        hidHooks = result == NO_ERROR;
+        hidHooks = SUCCEEDED(result);
         if (hidHooks)
             LOG_INFO("Win32 HID hooks installed");
         else
@@ -386,16 +380,15 @@ bool InstallHooks()
 
     if (!rawHooks)
     {
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
+        HookBackend::Begin();
 
-        DetourAttach(reinterpret_cast<PVOID*>(&o_GetRawInputData), hkGetRawInputData);
-        DetourAttach(reinterpret_cast<PVOID*>(&o_GetRawInputBuffer), hkGetRawInputBuffer);
-        DetourAttach(reinterpret_cast<PVOID*>(&o_RegisterRawInputDevices), hkRegisterRawInputDevices);
+        HookBackend::Attach(reinterpret_cast<PVOID*>(&o_GetRawInputData), hkGetRawInputData);
+        HookBackend::Attach(reinterpret_cast<PVOID*>(&o_GetRawInputBuffer), hkGetRawInputBuffer);
+        HookBackend::Attach(reinterpret_cast<PVOID*>(&o_RegisterRawInputDevices), hkRegisterRawInputDevices);
 
-        const LONG result = DetourTransactionCommit();
+        const HRESULT result = HookBackend::Commit();
 
-        rawHooks = result == NO_ERROR;
+        rawHooks = SUCCEEDED(result);
         if (rawHooks)
             LOG_INFO("Win32 raw input hooks installed");
         else
@@ -404,16 +397,15 @@ bool InstallHooks()
 
     if (!windowsHooks)
     {
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
+        HookBackend::Begin();
 
-        DetourAttach(reinterpret_cast<PVOID*>(&o_SetWindowsHookExA), hkSetWindowsHookExA);
-        DetourAttach(reinterpret_cast<PVOID*>(&o_SetWindowsHookExW), hkSetWindowsHookExW);
-        DetourAttach(reinterpret_cast<PVOID*>(&o_UnhookWindowsHookEx), hkUnhookWindowsHookEx);
+        HookBackend::Attach(reinterpret_cast<PVOID*>(&o_SetWindowsHookExA), hkSetWindowsHookExA);
+        HookBackend::Attach(reinterpret_cast<PVOID*>(&o_SetWindowsHookExW), hkSetWindowsHookExW);
+        HookBackend::Attach(reinterpret_cast<PVOID*>(&o_UnhookWindowsHookEx), hkUnhookWindowsHookEx);
 
-        const LONG result = DetourTransactionCommit();
+        const HRESULT result = HookBackend::Commit();
 
-        windowsHooks = result == NO_ERROR;
+        windowsHooks = SUCCEEDED(result);
         if (windowsHooks)
             LOG_INFO("Win32 windows input hooks installed");
         else
@@ -422,21 +414,20 @@ bool InstallHooks()
 
     if (!positionHooks)
     {
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
+        HookBackend::Begin();
 
-        DetourAttach(reinterpret_cast<PVOID*>(&o_GetCursorPos), hkGetCursorPos);
-        DetourAttach(reinterpret_cast<PVOID*>(&o_SetCursorPos), hkSetCursorPos);
+        HookBackend::Attach(reinterpret_cast<PVOID*>(&o_GetCursorPos), hkGetCursorPos);
+        HookBackend::Attach(reinterpret_cast<PVOID*>(&o_SetCursorPos), hkSetCursorPos);
 
         if (o_GetPhysicalCursorPos != nullptr)
-            DetourAttach(reinterpret_cast<PVOID*>(&o_GetPhysicalCursorPos), hkGetPhysicalCursorPos);
+            HookBackend::Attach(reinterpret_cast<PVOID*>(&o_GetPhysicalCursorPos), hkGetPhysicalCursorPos);
 
         if (o_SetPhysicalCursorPos != nullptr)
-            DetourAttach(reinterpret_cast<PVOID*>(&o_SetPhysicalCursorPos), hkSetPhysicalCursorPos);
+            HookBackend::Attach(reinterpret_cast<PVOID*>(&o_SetPhysicalCursorPos), hkSetPhysicalCursorPos);
 
-        const LONG result = DetourTransactionCommit();
+        const HRESULT result = HookBackend::Commit();
 
-        positionHooks = result == NO_ERROR;
+        positionHooks = SUCCEEDED(result);
         if (positionHooks)
             LOG_INFO("Win32 position input hooks installed");
         else
@@ -473,88 +464,87 @@ bool RemoveHooks()
 
     LOG_INFO("removing Win32 input hooks");
 
-    LONG result = NO_ERROR;
+    HRESULT result = S_OK;
 
     if (hasDetourHooks)
     {
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
+        HookBackend::Begin();
 
         if (messageHooks)
         {
-            DetourDetach(reinterpret_cast<PVOID*>(&o_PeekMessageA), hkPeekMessageA);
-            DetourDetach(reinterpret_cast<PVOID*>(&o_PeekMessageW), hkPeekMessageW);
-            DetourDetach(reinterpret_cast<PVOID*>(&o_GetMessageA), hkGetMessageA);
-            DetourDetach(reinterpret_cast<PVOID*>(&o_GetMessageW), hkGetMessageW);
+            HookBackend::Detach(reinterpret_cast<PVOID*>(&o_PeekMessageA), hkPeekMessageA);
+            HookBackend::Detach(reinterpret_cast<PVOID*>(&o_PeekMessageW), hkPeekMessageW);
+            HookBackend::Detach(reinterpret_cast<PVOID*>(&o_GetMessageA), hkGetMessageA);
+            HookBackend::Detach(reinterpret_cast<PVOID*>(&o_GetMessageW), hkGetMessageW);
         }
 
         if (keyStateHooks)
         {
-            DetourDetach(reinterpret_cast<PVOID*>(&o_GetAsyncKeyState), hkGetAsyncKeyState);
-            DetourDetach(reinterpret_cast<PVOID*>(&o_GetKeyState), hkGetKeyState);
-            DetourDetach(reinterpret_cast<PVOID*>(&o_GetKeyboardState), hkGetKeyboardState);
+            HookBackend::Detach(reinterpret_cast<PVOID*>(&o_GetAsyncKeyState), hkGetAsyncKeyState);
+            HookBackend::Detach(reinterpret_cast<PVOID*>(&o_GetKeyState), hkGetKeyState);
+            HookBackend::Detach(reinterpret_cast<PVOID*>(&o_GetKeyboardState), hkGetKeyboardState);
         }
 
         if (getPosHooks)
         {
-            DetourDetach(reinterpret_cast<PVOID*>(&o_GetMessagePos), hkGetMessagePos);
-            DetourDetach(reinterpret_cast<PVOID*>(&o_GetMouseMovePointsEx), hkGetMouseMovePointsEx);
+            HookBackend::Detach(reinterpret_cast<PVOID*>(&o_GetMessagePos), hkGetMessagePos);
+            HookBackend::Detach(reinterpret_cast<PVOID*>(&o_GetMouseMovePointsEx), hkGetMouseMovePointsEx);
         }
 
         if (clipCursorHooks)
         {
-            DetourDetach(reinterpret_cast<PVOID*>(&o_ClipCursor), hkClipCursor);
-            DetourDetach(reinterpret_cast<PVOID*>(&o_GetClipCursor), hkGetClipCursor);
+            HookBackend::Detach(reinterpret_cast<PVOID*>(&o_ClipCursor), hkClipCursor);
+            HookBackend::Detach(reinterpret_cast<PVOID*>(&o_GetClipCursor), hkGetClipCursor);
         }
 
         if (message2Hooks)
         {
-            DetourDetach(reinterpret_cast<PVOID*>(&o_SendInput), hkSendInput);
-            DetourDetach(reinterpret_cast<PVOID*>(&o_mouse_event), hkmouse_event);
-            DetourDetach(reinterpret_cast<PVOID*>(&o_PostMessageA), hkPostMessageA);
-            DetourDetach(reinterpret_cast<PVOID*>(&o_PostMessageW), hkPostMessageW);
-            DetourDetach(reinterpret_cast<PVOID*>(&o_SendMessageA), hkSendMessageA);
-            DetourDetach(reinterpret_cast<PVOID*>(&o_SendMessageW), hkSendMessageW);
+            HookBackend::Detach(reinterpret_cast<PVOID*>(&o_SendInput), hkSendInput);
+            HookBackend::Detach(reinterpret_cast<PVOID*>(&o_mouse_event), hkmouse_event);
+            HookBackend::Detach(reinterpret_cast<PVOID*>(&o_PostMessageA), hkPostMessageA);
+            HookBackend::Detach(reinterpret_cast<PVOID*>(&o_PostMessageW), hkPostMessageW);
+            HookBackend::Detach(reinterpret_cast<PVOID*>(&o_SendMessageA), hkSendMessageA);
+            HookBackend::Detach(reinterpret_cast<PVOID*>(&o_SendMessageW), hkSendMessageW);
         }
 
         if (hidHooks)
         {
-            DetourDetach(reinterpret_cast<PVOID*>(&o_CreateFileA), hkCreateFileA);
-            DetourDetach(reinterpret_cast<PVOID*>(&o_CreateFileW), hkCreateFileW);
-            DetourDetach(reinterpret_cast<PVOID*>(&o_ReadFile), hkReadFile);
-            DetourDetach(reinterpret_cast<PVOID*>(&o_DeviceIoControl), hkDeviceIoControl);
-            DetourDetach(reinterpret_cast<PVOID*>(&o_CloseHandle), hkCloseHandle);
+            HookBackend::Detach(reinterpret_cast<PVOID*>(&o_CreateFileA), hkCreateFileA);
+            HookBackend::Detach(reinterpret_cast<PVOID*>(&o_CreateFileW), hkCreateFileW);
+            HookBackend::Detach(reinterpret_cast<PVOID*>(&o_ReadFile), hkReadFile);
+            HookBackend::Detach(reinterpret_cast<PVOID*>(&o_DeviceIoControl), hkDeviceIoControl);
+            HookBackend::Detach(reinterpret_cast<PVOID*>(&o_CloseHandle), hkCloseHandle);
         }
 
         if (rawHooks)
         {
-            DetourDetach(reinterpret_cast<PVOID*>(&o_GetRawInputData), hkGetRawInputData);
-            DetourDetach(reinterpret_cast<PVOID*>(&o_GetRawInputBuffer), hkGetRawInputBuffer);
-            DetourDetach(reinterpret_cast<PVOID*>(&o_RegisterRawInputDevices), hkRegisterRawInputDevices);
+            HookBackend::Detach(reinterpret_cast<PVOID*>(&o_GetRawInputData), hkGetRawInputData);
+            HookBackend::Detach(reinterpret_cast<PVOID*>(&o_GetRawInputBuffer), hkGetRawInputBuffer);
+            HookBackend::Detach(reinterpret_cast<PVOID*>(&o_RegisterRawInputDevices), hkRegisterRawInputDevices);
         }
 
         if (windowsHooks)
         {
-            DetourDetach(reinterpret_cast<PVOID*>(&o_SetWindowsHookExA), hkSetWindowsHookExA);
-            DetourDetach(reinterpret_cast<PVOID*>(&o_SetWindowsHookExW), hkSetWindowsHookExW);
-            DetourDetach(reinterpret_cast<PVOID*>(&o_UnhookWindowsHookEx), hkUnhookWindowsHookEx);
+            HookBackend::Detach(reinterpret_cast<PVOID*>(&o_SetWindowsHookExA), hkSetWindowsHookExA);
+            HookBackend::Detach(reinterpret_cast<PVOID*>(&o_SetWindowsHookExW), hkSetWindowsHookExW);
+            HookBackend::Detach(reinterpret_cast<PVOID*>(&o_UnhookWindowsHookEx), hkUnhookWindowsHookEx);
         }
 
         if (positionHooks)
         {
-            DetourDetach(reinterpret_cast<PVOID*>(&o_GetCursorPos), hkGetCursorPos);
-            DetourDetach(reinterpret_cast<PVOID*>(&o_SetCursorPos), hkSetCursorPos);
+            HookBackend::Detach(reinterpret_cast<PVOID*>(&o_GetCursorPos), hkGetCursorPos);
+            HookBackend::Detach(reinterpret_cast<PVOID*>(&o_SetCursorPos), hkSetCursorPos);
 
             if (o_GetPhysicalCursorPos != nullptr)
-                DetourDetach(reinterpret_cast<PVOID*>(&o_GetPhysicalCursorPos), hkGetPhysicalCursorPos);
+                HookBackend::Detach(reinterpret_cast<PVOID*>(&o_GetPhysicalCursorPos), hkGetPhysicalCursorPos);
 
             if (o_SetPhysicalCursorPos != nullptr)
-                DetourDetach(reinterpret_cast<PVOID*>(&o_SetPhysicalCursorPos), hkSetPhysicalCursorPos);
+                HookBackend::Detach(reinterpret_cast<PVOID*>(&o_SetPhysicalCursorPos), hkSetPhysicalCursorPos);
         }
 
-        result = DetourTransactionCommit();
+        result = HookBackend::Commit();
 
-        if (result == NO_ERROR)
+        if (SUCCEEDED(result))
         {
             messageHooks = false;
             keyStateHooks = false;
@@ -582,7 +572,7 @@ bool RemoveHooks()
     _state.HooksInstalled = messageHooks && keyStateHooks && getPosHooks && clipCursorHooks && message2Hooks &&
                             hidReady && rawHooks && windowsHooks && (positionHooks || positionIATHooks);
 
-    return result == NO_ERROR;
+    return SUCCEEDED(result);
 }
 
 } // namespace OptiInput

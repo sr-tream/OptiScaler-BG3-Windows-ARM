@@ -7,7 +7,7 @@
 
 #include <proxies/KernelBase_Proxy.h>
 
-#include <detours/detours.h>
+#include <hooks/HookBackend.h>
 #include <misc/IdentifyGpu.h>
 #include <low_latency/input/input_reflex.h>
 
@@ -329,11 +329,10 @@ void NvApiHooks::Hook(HMODULE nvapiModule)
         else if (State::Instance().activeFgOutput == FGOutput::XeFG)
             fakenvapi::init(leanMode);
 
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
-        DetourAttach(&(PVOID&) o_NvAPI_QueryInterface, hkNvAPI_QueryInterface);
-        auto detourResult = DetourTransactionCommit();
-        if (detourResult != NO_ERROR)
+        HookBackend::Begin();
+        HookBackend::Attach(&(PVOID&) o_NvAPI_QueryInterface, hkNvAPI_QueryInterface);
+        auto detourResult = HookBackend::Commit();
+        if (FAILED(detourResult))
         {
             LOG_ERROR("Failed to hook NvAPI_QueryInterface: {:X}", detourResult);
             o_NvAPI_QueryInterface = nullptr;
@@ -343,14 +342,13 @@ void NvApiHooks::Hook(HMODULE nvapiModule)
 
 void NvApiHooks::Unhook()
 {
-    DetourTransactionBegin();
-    DetourUpdateThread(GetCurrentThread());
+    HookBackend::Begin();
 
     if (o_NvAPI_QueryInterface != nullptr)
-        DetourDetach(&(PVOID&) o_NvAPI_QueryInterface, hkNvAPI_QueryInterface);
+        HookBackend::Detach(&(PVOID&) o_NvAPI_QueryInterface, hkNvAPI_QueryInterface);
 
-    auto detourResult = DetourTransactionCommit();
-    if (detourResult != NO_ERROR)
+    auto detourResult = HookBackend::Commit();
+    if (FAILED(detourResult))
     {
         LOG_ERROR("Failed to unhook NvAPI_QueryInterface: {:X}", detourResult);
     }

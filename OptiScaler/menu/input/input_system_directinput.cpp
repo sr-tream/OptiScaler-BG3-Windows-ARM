@@ -3,7 +3,7 @@
 
 #include <hooks/Kernel_Hooks.h>
 
-#include <detours/detours.h>
+#include <hooks/HookBackend.h>
 
 #include <cstring>
 
@@ -394,26 +394,25 @@ bool HookDirectInputDeviceLocked(void* device, DirectInputDeviceKind kind)
         return completeCoverage;
     }
 
-    LONG result = NO_ERROR;
+    HRESULT result = S_OK;
 
     {
         std::scoped_lock detourLock(GetDetourTransactionMutex());
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
+        HookBackend::Begin();
 
         if (attachRelease)
-            DetourAttach(reinterpret_cast<PVOID*>(&releaseHook->Trampoline), hkDirectInputDeviceRelease);
+            HookBackend::Attach(reinterpret_cast<PVOID*>(&releaseHook->Trampoline), hkDirectInputDeviceRelease);
 
         if (attachGetDeviceState)
-            DetourAttach(reinterpret_cast<PVOID*>(&getDeviceStateHook->Trampoline), hkDirectInputGetDeviceState);
+            HookBackend::Attach(reinterpret_cast<PVOID*>(&getDeviceStateHook->Trampoline), hkDirectInputGetDeviceState);
 
         if (attachGetDeviceData)
-            DetourAttach(reinterpret_cast<PVOID*>(&getDeviceDataHook->Trampoline), hkDirectInputGetDeviceData);
+            HookBackend::Attach(reinterpret_cast<PVOID*>(&getDeviceDataHook->Trampoline), hkDirectInputGetDeviceData);
 
-        result = DetourTransactionCommit();
+        result = HookBackend::Commit();
     }
 
-    if (result != NO_ERROR)
+    if (FAILED(result))
     {
         LOG_ERROR("DirectInput device hook installation failed result:{} device:{} kind:{}", result, device,
                   DirectInputDeviceKindName(kind));
@@ -475,17 +474,16 @@ bool HookDirectInputInterfaceLocked(void* directInput, bool wide)
         // implementation through one detour so a shared A/W implementation is
         // never attached twice. The interface's vtable identifies the correct
         // per-target trampoline at call time.
-        LONG result = NO_ERROR;
+        HRESULT result = S_OK;
 
         {
             std::scoped_lock detourLock(GetDetourTransactionMutex());
-            DetourTransactionBegin();
-            DetourUpdateThread(GetCurrentThread());
-            DetourAttach(reinterpret_cast<PVOID*>(&slot->Trampoline), hkDirectInputCreateDeviceA);
-            result = DetourTransactionCommit();
+            HookBackend::Begin();
+            HookBackend::Attach(reinterpret_cast<PVOID*>(&slot->Trampoline), hkDirectInputCreateDeviceA);
+            result = HookBackend::Commit();
         }
 
-        if (result != NO_ERROR)
+        if (FAILED(result))
         {
             LOG_ERROR("DirectInput CreateDevice hook installation failed result:{} wide:{} target:{}", result,
                       wide ? 1 : 0, reinterpret_cast<void*>(createDevice));
@@ -578,19 +576,18 @@ bool InstallDirectInputExportHook(HMODULE module, const char* exportName, void**
         *original = resolved;
     }
 
-    LONG result = NO_ERROR;
+    HRESULT result = S_OK;
 
     {
         std::scoped_lock detourLock(GetDetourTransactionMutex());
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
-        DetourAttach(reinterpret_cast<PVOID*>(original), hook);
-        result = DetourTransactionCommit();
+        HookBackend::Begin();
+        HookBackend::Attach(reinterpret_cast<PVOID*>(original), hook);
+        result = HookBackend::Commit();
     }
 
     std::unique_lock lock(_state.Mutex);
 
-    if (result != NO_ERROR)
+    if (FAILED(result))
     {
         LOG_ERROR("{} hook installation failed result:{}", exportName, result);
         *original = nullptr;
@@ -671,48 +668,47 @@ bool RemoveDirectInputHooksLocked()
         return true;
     }
 
-    DetourTransactionBegin();
-    DetourUpdateThread(GetCurrentThread());
+    HookBackend::Begin();
 
     if (_state.DirectInput8CreateHookInstalled && o_DirectInput8Create != nullptr)
-        DetourDetach(reinterpret_cast<PVOID*>(&o_DirectInput8Create), hkDirectInput8Create);
+        HookBackend::Detach(reinterpret_cast<PVOID*>(&o_DirectInput8Create), hkDirectInput8Create);
 
     if (_state.DirectInputCreateAHookInstalled && o_DirectInputCreateA != nullptr)
-        DetourDetach(reinterpret_cast<PVOID*>(&o_DirectInputCreateA), hkDirectInputCreateA);
+        HookBackend::Detach(reinterpret_cast<PVOID*>(&o_DirectInputCreateA), hkDirectInputCreateA);
 
     if (_state.DirectInputCreateWHookInstalled && o_DirectInputCreateW != nullptr)
-        DetourDetach(reinterpret_cast<PVOID*>(&o_DirectInputCreateW), hkDirectInputCreateW);
+        HookBackend::Detach(reinterpret_cast<PVOID*>(&o_DirectInputCreateW), hkDirectInputCreateW);
 
     if (_state.DirectInputCreateExHookInstalled && o_DirectInputCreateEx != nullptr)
-        DetourDetach(reinterpret_cast<PVOID*>(&o_DirectInputCreateEx), hkDirectInputCreateEx);
+        HookBackend::Detach(reinterpret_cast<PVOID*>(&o_DirectInputCreateEx), hkDirectInputCreateEx);
 
     for (auto& slot : DirectInputCreateDeviceHooks)
     {
         if (slot.InUse && slot.Trampoline != nullptr)
-            DetourDetach(reinterpret_cast<PVOID*>(&slot.Trampoline), hkDirectInputCreateDeviceA);
+            HookBackend::Detach(reinterpret_cast<PVOID*>(&slot.Trampoline), hkDirectInputCreateDeviceA);
     }
 
     for (auto& slot : DirectInputGetDeviceStateHooks)
     {
         if (slot.InUse && slot.Trampoline != nullptr)
-            DetourDetach(reinterpret_cast<PVOID*>(&slot.Trampoline), hkDirectInputGetDeviceState);
+            HookBackend::Detach(reinterpret_cast<PVOID*>(&slot.Trampoline), hkDirectInputGetDeviceState);
     }
 
     for (auto& slot : DirectInputGetDeviceDataHooks)
     {
         if (slot.InUse && slot.Trampoline != nullptr)
-            DetourDetach(reinterpret_cast<PVOID*>(&slot.Trampoline), hkDirectInputGetDeviceData);
+            HookBackend::Detach(reinterpret_cast<PVOID*>(&slot.Trampoline), hkDirectInputGetDeviceData);
     }
 
     for (auto& slot : DirectInputReleaseHooks)
     {
         if (slot.InUse && slot.Trampoline != nullptr)
-            DetourDetach(reinterpret_cast<PVOID*>(&slot.Trampoline), hkDirectInputDeviceRelease);
+            HookBackend::Detach(reinterpret_cast<PVOID*>(&slot.Trampoline), hkDirectInputDeviceRelease);
     }
 
-    const LONG result = DetourTransactionCommit();
+    const HRESULT result = HookBackend::Commit();
 
-    if (result != NO_ERROR)
+    if (FAILED(result))
     {
         LOG_WARN("DirectInput hook removal failed result:{}; retaining trampoline tables for a safe retry", result);
         return false;

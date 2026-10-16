@@ -709,6 +709,8 @@ void ClearTransientState()
 
 LRESULT CALLBACK OptiInputWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
+    if (ProcessCursorClipMessage(hwnd, msg))
+        return 0;
     if (msg == WM_NULL)
     {
         WNDPROC originalWndProc = nullptr;
@@ -743,6 +745,8 @@ LRESULT CALLBACK OptiInputWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
     if (unicodeNoCharProbe)
         return TRUE;
 
+    ScheduleCursorClipPolicy();
+
     if (handled)
     {
         // Foreground raw-input messages require DefWindowProc cleanup even when
@@ -763,6 +767,12 @@ bool ProcessRemovedMessage(MSG* msg)
 {
     if (msg == nullptr)
         return false;
+
+    if (ProcessCursorClipMessage(msg->hwnd, msg->message))
+    {
+        ConsumeMessage(msg);
+        return true;
+    }
 
     if (msg->message == WM_NULL)
         return false;
@@ -791,6 +801,8 @@ bool ProcessRemovedMessage(MSG* msg)
         handled =
             HandleWindowMessage(msg->hwnd, msg->message, msg->wParam, msg->lParam, InputMessageSource::MessageQueue);
     }
+
+    ScheduleCursorClipPolicy();
 
     if (!handled)
         return false;

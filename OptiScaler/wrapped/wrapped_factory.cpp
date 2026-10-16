@@ -3,7 +3,7 @@
 
 #include <hooks/DxgiFactory_WrappedCalls.h>
 
-#include <detours/detours.h>
+#include <hooks/HookBackend.h>
 
 typedef HRESULT (*PFN_GetParent)(IDXGIAdapter* This, REFIID riid, void** ppParent);
 
@@ -42,13 +42,12 @@ static void AttachToAdapter(IDXGIAdapter* adapter)
     // Apply the detour
     if (o_GetParent != nullptr)
     {
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
+        HookBackend::Begin();
 
-        DetourAttach(&(PVOID&) o_GetParent, hkGetParent);
+        HookBackend::Attach(&(PVOID&) o_GetParent, hkGetParent);
 
-        auto detourResult = DetourTransactionCommit();
-        if (detourResult != NO_ERROR)
+        auto detourResult = HookBackend::Commit();
+        if (FAILED(detourResult))
         {
             LOG_ERROR("Failed to attach GetParent detour: {:X}", detourResult);
             o_GetParent = nullptr;

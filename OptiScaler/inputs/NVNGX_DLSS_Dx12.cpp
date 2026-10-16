@@ -20,7 +20,7 @@
 
 #include <dxgi1_4.h>
 #include <shared_mutex>
-#include "detours/detours.h"
+#include <hooks/HookBackend.h>
 #include <ankerl/unordered_dense.h>
 #include <misc/IdentifyGpu.h>
 

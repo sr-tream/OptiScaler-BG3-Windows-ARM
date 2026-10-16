@@ -4,7 +4,7 @@
 #include <Config.h>
 #include <Util.h>
 
-#include <include/detours/detours.h>
+#include <hooks/HookBackend.h>
 #include <include/d3dx/d3dx12.h>
 #include <imgui/ImGuiNotify.hpp>
 

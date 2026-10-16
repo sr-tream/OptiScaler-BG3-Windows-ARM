@@ -9,7 +9,7 @@
 #include <proxies/KernelBase_Proxy.h>
 
 #include "scanner/scanner.h"
-#include "detours/detours.h"
+#include <hooks/HookBackend.h>
 
 #include "fsr2/ffx_fsr2.h"
 #include "fsr2/dx11/ffx_fsr2_dx11.h"
@@ -392,8 +392,7 @@ void HookFSR2Dx11ExeInputs()
 {
     LOG_INFO("Trying to hook FSR2 Dx11 methods");
 
-    DetourTransactionBegin();
-    DetourUpdateThread(GetCurrentThread());
+    HookBackend::Begin();
 
     // ffxFsr2ContextCreate
     if (o_ffxFsr2ContextCreate_Dx11 == nullptr)
@@ -402,7 +401,7 @@ void HookFSR2Dx11ExeInputs()
             (PFN_ffxFsr2ContextCreate) KernelBaseProxy::GetProcAddress_()(exeModule, "ffxFsr2ContextCreate");
 
         if (o_ffxFsr2ContextCreate_Dx11 != nullptr)
-            DetourAttach(&(PVOID&) o_ffxFsr2ContextCreate_Dx11, ffxFsr2ContextCreate_Dx11);
+            HookBackend::Attach(&(PVOID&) o_ffxFsr2ContextCreate_Dx11, ffxFsr2ContextCreate_Dx11);
 
         LOG_DEBUG("ffxFsr2ContextCreate_Dx11: {:X}", (size_t) o_ffxFsr2ContextCreate_Dx11);
     }
@@ -414,7 +413,7 @@ void HookFSR2Dx11ExeInputs()
             (PFN_ffxFsr2ContextDispatch) KernelBaseProxy::GetProcAddress_()(exeModule, "ffxFsr2ContextDispatch");
 
         if (o_ffxFsr2ContextDispatch_Dx11 != nullptr)
-            DetourAttach(&(PVOID&) o_ffxFsr2ContextDispatch_Dx11, ffxFsr2ContextDispatch_Dx11);
+            HookBackend::Attach(&(PVOID&) o_ffxFsr2ContextDispatch_Dx11, ffxFsr2ContextDispatch_Dx11);
 
         LOG_DEBUG("ffxFsr2ContextDispatch_Dx11: {:X}", (size_t) o_ffxFsr2ContextDispatch_Dx11);
     }
@@ -426,7 +425,7 @@ void HookFSR2Dx11ExeInputs()
             (PFN_ffxFsr2ContextDestroy) KernelBaseProxy::GetProcAddress_()(exeModule, "ffxFsr2ContextDestroy");
 
         if (o_ffxFsr2ContextDestroy_Dx11 != nullptr)
-            DetourAttach(&(PVOID&) o_ffxFsr2ContextDestroy_Dx11, ffxFsr2ContextDestroy_Dx11);
+            HookBackend::Attach(&(PVOID&) o_ffxFsr2ContextDestroy_Dx11, ffxFsr2ContextDestroy_Dx11);
 
         LOG_DEBUG("ffxFsr2ContextDestroy_Dx11: {:X}", (size_t) o_ffxFsr2ContextDestroy_Dx11);
     }
@@ -439,7 +438,7 @@ void HookFSR2Dx11ExeInputs()
                 exeModule, "ffxFsr2GetUpscaleRatioFromQualityMode");
 
         if (o_ffxFsr2GetUpscaleRatioFromQualityMode_Dx11 != nullptr)
-            DetourAttach(&(PVOID&) o_ffxFsr2GetUpscaleRatioFromQualityMode_Dx11,
+            HookBackend::Attach(&(PVOID&) o_ffxFsr2GetUpscaleRatioFromQualityMode_Dx11,
                          ffxFsr2GetUpscaleRatioFromQualityMode_Dx11);
 
         LOG_DEBUG("ffxFsr2GetUpscaleRatioFromQualityMode_Dx11: {:X}",
@@ -454,7 +453,7 @@ void HookFSR2Dx11ExeInputs()
                 exeModule, "ffxFsr2GetRenderResolutionFromQualityMode");
 
         if (o_ffxFsr2GetRenderResolutionFromQualityMode_Dx11 != nullptr)
-            DetourAttach(&(PVOID&) o_ffxFsr2GetRenderResolutionFromQualityMode_Dx11,
+            HookBackend::Attach(&(PVOID&) o_ffxFsr2GetRenderResolutionFromQualityMode_Dx11,
                          ffxFsr2GetRenderResolutionFromQualityMode_Dx11);
 
         LOG_DEBUG("ffxFsr2GetRenderResolutionFromQualityMode_Dx11: {:X}",
@@ -468,13 +467,13 @@ void HookFSR2Dx11ExeInputs()
             exeModule, "ffxFsr2GetJitterPhaseCount");
 
         if (o_ffxFsr2GetJitterPhaseCount_Dx11 != nullptr)
-            DetourAttach(&(PVOID&) o_ffxFsr2GetJitterPhaseCount_Dx11, ffxFsr2GetJitterPhaseCount_Dx11);
+            HookBackend::Attach(&(PVOID&) o_ffxFsr2GetJitterPhaseCount_Dx11, ffxFsr2GetJitterPhaseCount_Dx11);
 
         LOG_DEBUG("o_ffxFsr2GetJitterPhaseCount_Dx11: {:X}", (size_t) o_ffxFsr2GetJitterPhaseCount_Dx11);
     }
 
-    auto detourResult = DetourTransactionCommit();
-    if (detourResult != NO_ERROR)
+    auto detourResult = HookBackend::Commit();
+    if (FAILED(detourResult))
     {
         LOG_ERROR("Failed to hook FSR2 Dx11 methods, error code: {:X}", detourResult);
         o_ffxFsr2ContextCreate_Dx11 = nullptr;

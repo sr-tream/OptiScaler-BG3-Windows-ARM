@@ -1,7 +1,7 @@
 #pragma once
 #include "SysUtils.h"
 #include "Config.h"
-#include "detours/detours.h"
+#include <hooks/HookBackend.h>
 #include <wincrypt.h>
 
 #include "Hook_Utils.h"
@@ -57,17 +57,16 @@ static void hookCrypt32()
 {
     LOG_FUNC();
 
-    o_CryptQueryObject = reinterpret_cast<PFN_CryptQueryObject>(DetourFindFunction("crypt32.dll", "CryptQueryObject"));
+    o_CryptQueryObject = reinterpret_cast<PFN_CryptQueryObject>(HookBackend::FindFunction("crypt32.dll", "CryptQueryObject"));
 
     if (o_CryptQueryObject != nullptr)
     {
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
+        HookBackend::Begin();
 
-        DetourAttach(&(PVOID&) o_CryptQueryObject, hkCryptQueryObject);
+        HookBackend::Attach(&(PVOID&) o_CryptQueryObject, hkCryptQueryObject);
 
-        auto detourResult = DetourTransactionCommit();
-        if (detourResult != NO_ERROR)
+        auto detourResult = HookBackend::Commit();
+        if (FAILED(detourResult))
         {
             LOG_ERROR("Failed to hook CryptQueryObject: {:X}", detourResult);
             o_CryptQueryObject = nullptr;
@@ -79,13 +78,12 @@ static void unhookCrypt32()
 {
     if (o_CryptQueryObject != nullptr)
     {
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
+        HookBackend::Begin();
 
-        DetourDetach(&(PVOID&) o_CryptQueryObject, hkCryptQueryObject);
+        HookBackend::Detach(&(PVOID&) o_CryptQueryObject, hkCryptQueryObject);
 
-        auto detourResult = DetourTransactionCommit();
-        if (detourResult != NO_ERROR)
+        auto detourResult = HookBackend::Commit();
+        if (FAILED(detourResult))
         {
             LOG_ERROR("Failed to unhook CryptQueryObject: {:X}", detourResult);
         }

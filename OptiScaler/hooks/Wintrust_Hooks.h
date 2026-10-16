@@ -2,7 +2,7 @@
 #include "SysUtils.h"
 #include "Config.h"
 
-#include "detours/detours.h"
+#include <hooks/HookBackend.h>
 #include <WinTrust.h>
 #include <Softpub.h>
 
@@ -53,17 +53,16 @@ static void hookWintrust()
 {
     LOG_FUNC();
 
-    o_WinVerifyTrust = reinterpret_cast<PFN_WinVerifyTrust>(DetourFindFunction("Wintrust.dll", "WinVerifyTrust"));
+    o_WinVerifyTrust = reinterpret_cast<PFN_WinVerifyTrust>(HookBackend::FindFunction("Wintrust.dll", "WinVerifyTrust"));
 
     if (o_WinVerifyTrust != nullptr)
     {
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
+        HookBackend::Begin();
 
-        DetourAttach(&(PVOID&) o_WinVerifyTrust, hkWinVerifyTrust);
+        HookBackend::Attach(&(PVOID&) o_WinVerifyTrust, hkWinVerifyTrust);
 
-        auto detourResult = DetourTransactionCommit();
-        if (detourResult != NO_ERROR)
+        auto detourResult = HookBackend::Commit();
+        if (FAILED(detourResult))
         {
             LOG_ERROR("DetourTransactionCommit error: {:X}", detourResult);
             o_WinVerifyTrust = nullptr;
@@ -75,13 +74,12 @@ static void unhookWintrust()
 {
     if (o_WinVerifyTrust != nullptr)
     {
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
+        HookBackend::Begin();
 
-        DetourDetach(&(PVOID&) o_WinVerifyTrust, hkWinVerifyTrust);
+        HookBackend::Detach(&(PVOID&) o_WinVerifyTrust, hkWinVerifyTrust);
 
-        auto detourResult = DetourTransactionCommit();
-        if (detourResult != NO_ERROR)
+        auto detourResult = HookBackend::Commit();
+        if (FAILED(detourResult))
         {
             LOG_ERROR("DetourTransactionCommit error: {:X}", detourResult);
         }

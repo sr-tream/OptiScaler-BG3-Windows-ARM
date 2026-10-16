@@ -9,7 +9,7 @@
 #include <proxies/KernelBase_Proxy.h>
 
 #include "scanner/scanner.h"
-#include "detours/detours.h"
+#include <hooks/HookBackend.h>
 
 #include "fsr2/ffx_fsr2.h"
 #include "fsr2/vk/ffx_fsr2_vk.h"
@@ -619,8 +619,7 @@ void HookFSR2VkExeInputs()
 {
     LOG_INFO("Trying to hook FSR2 Vk methods");
 
-    DetourTransactionBegin();
-    DetourUpdateThread(GetCurrentThread());
+    HookBackend::Begin();
 
     // ffxFsr2ContextCreate
     if (o_ffxFsr2ContextCreate_Vk == nullptr)
@@ -629,7 +628,7 @@ void HookFSR2VkExeInputs()
             (PFN_ffxFsr2ContextCreate) KernelBaseProxy::GetProcAddress_()(exeModule, "ffxFsr2ContextCreate");
 
         if (o_ffxFsr2ContextCreate_Vk != nullptr)
-            DetourAttach(&(PVOID&) o_ffxFsr2ContextCreate_Vk, ffxFsr2ContextCreate_Vk);
+            HookBackend::Attach(&(PVOID&) o_ffxFsr2ContextCreate_Vk, ffxFsr2ContextCreate_Vk);
 
         LOG_DEBUG("ffxFsr2ContextCreate_Vk: {:X}", (size_t) o_ffxFsr2ContextCreate_Vk);
     }
@@ -641,7 +640,7 @@ void HookFSR2VkExeInputs()
             (PFN_ffxFsr2ContextDispatch) KernelBaseProxy::GetProcAddress_()(exeModule, "ffxFsr2ContextDispatch");
 
         if (o_ffxFsr2ContextDispatch_Vk != nullptr)
-            DetourAttach(&(PVOID&) o_ffxFsr2ContextDispatch_Vk, ffxFsr2ContextDispatch_Vk);
+            HookBackend::Attach(&(PVOID&) o_ffxFsr2ContextDispatch_Vk, ffxFsr2ContextDispatch_Vk);
 
         LOG_DEBUG("ffxFsr2ContextDispatch_Vk: {:X}", (size_t) o_ffxFsr2ContextDispatch_Vk);
     }
@@ -653,7 +652,7 @@ void HookFSR2VkExeInputs()
             (PFN_ffxFsr2ContextDestroy) KernelBaseProxy::GetProcAddress_()(exeModule, "ffxFsr2ContextDestroy");
 
         if (o_ffxFsr2ContextDestroy_Vk != nullptr)
-            DetourAttach(&(PVOID&) o_ffxFsr2ContextDestroy_Vk, ffxFsr2ContextDestroy_Vk);
+            HookBackend::Attach(&(PVOID&) o_ffxFsr2ContextDestroy_Vk, ffxFsr2ContextDestroy_Vk);
 
         LOG_DEBUG("ffxFsr2ContextDestroy_Vk: {:X}", (size_t) o_ffxFsr2ContextDestroy_Vk);
     }
@@ -666,7 +665,7 @@ void HookFSR2VkExeInputs()
                 exeModule, "ffxFsr2GetUpscaleRatioFromQualityMode");
 
         if (o_ffxFsr2GetUpscaleRatioFromQualityMode_Vk != nullptr)
-            DetourAttach(&(PVOID&) o_ffxFsr2GetUpscaleRatioFromQualityMode_Vk,
+            HookBackend::Attach(&(PVOID&) o_ffxFsr2GetUpscaleRatioFromQualityMode_Vk,
                          ffxFsr2GetUpscaleRatioFromQualityMode_Vk);
 
         LOG_DEBUG("ffxFsr2GetUpscaleRatioFromQualityMode_Vk: {:X}",
@@ -681,7 +680,7 @@ void HookFSR2VkExeInputs()
                 exeModule, "ffxFsr2GetRenderResolutionFromQualityMode");
 
         if (o_ffxFsr2GetRenderResolutionFromQualityMode_Vk != nullptr)
-            DetourAttach(&(PVOID&) o_ffxFsr2GetRenderResolutionFromQualityMode_Vk,
+            HookBackend::Attach(&(PVOID&) o_ffxFsr2GetRenderResolutionFromQualityMode_Vk,
                          ffxFsr2GetRenderResolutionFromQualityMode_Vk);
 
         LOG_DEBUG("ffxFsr2GetRenderResolutionFromQualityMode_Vk: {:X}",
@@ -695,7 +694,7 @@ void HookFSR2VkExeInputs()
             exeModule, "ffxFsr2GetJitterPhaseCount");
 
         if (o_ffxFsr2GetJitterPhaseCount_Vk != nullptr)
-            DetourAttach(&(PVOID&) o_ffxFsr2GetJitterPhaseCount_Vk, ffxFsr2GetJitterPhaseCount_Vk);
+            HookBackend::Attach(&(PVOID&) o_ffxFsr2GetJitterPhaseCount_Vk, ffxFsr2GetJitterPhaseCount_Vk);
 
         LOG_DEBUG("o_ffxFsr2GetJitterPhaseCount_Vk: {:X}", (size_t) o_ffxFsr2GetJitterPhaseCount_Vk);
     }
@@ -707,7 +706,7 @@ void HookFSR2VkExeInputs()
             exeModule, "ffxFsr2GetScratchMemorySizeVK");
 
         if (o_ffxFsr2GetScratchMemorySize_Vk != nullptr)
-            DetourAttach(&(PVOID&) o_ffxFsr2GetScratchMemorySize_Vk, ffxFsr2GetScratchMemorySize_Vk);
+            HookBackend::Attach(&(PVOID&) o_ffxFsr2GetScratchMemorySize_Vk, ffxFsr2GetScratchMemorySize_Vk);
 
         LOG_DEBUG("o_ffxFsr2GetScratchMemorySize_Vk: {:X}", (size_t) o_ffxFsr2GetScratchMemorySize_Vk);
     }
@@ -718,15 +717,15 @@ void HookFSR2VkExeInputs()
         o_ffxGetDevice_Vk = (PFN_ffxGetDeviceVK) KernelBaseProxy::GetProcAddress_()(exeModule, "ffxGetDeviceVK");
 
         if (o_ffxGetDevice_Vk != nullptr)
-            DetourAttach(&(PVOID&) o_ffxGetDevice_Vk, ffxGetDevice_Vk);
+            HookBackend::Attach(&(PVOID&) o_ffxGetDevice_Vk, ffxGetDevice_Vk);
 
         LOG_DEBUG("o_ffxGetDevice_Vk: {:X}", (size_t) o_ffxGetDevice_Vk);
     }
 
     State::Instance().fsrHooks = o_ffxFsr2ContextCreate_Vk != nullptr;
 
-    auto detourResult = DetourTransactionCommit();
-    if (detourResult != NO_ERROR)
+    auto detourResult = HookBackend::Commit();
+    if (FAILED(detourResult))
     {
         LOG_ERROR("Failed to attach FSR2 Vk hooks: {:X}", detourResult);
         o_ffxFsr2ContextCreate_Vk = nullptr;

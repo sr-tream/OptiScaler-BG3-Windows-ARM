@@ -7,7 +7,7 @@
 #include <proxies/Ntdll_Proxy.h>
 #include <proxies/KernelBase_Proxy.h>
 
-#include <detours/detours.h>
+#include <hooks/HookBackend.h>
 
 #include <dxgi1_6.h>
 
@@ -89,11 +89,10 @@ class DxgiProxy
     {
         auto addr = CreateDxgiFactory_ForHook();
 
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
-        DetourAttach(&(PVOID&) addr, method);
-        auto detourResult = DetourTransactionCommit();
-        if (detourResult != NO_ERROR)
+        HookBackend::Begin();
+        HookBackend::Attach(&(PVOID&) addr, method);
+        auto detourResult = HookBackend::Commit();
+        if (FAILED(detourResult))
         {
             LOG_ERROR("Failed to hook: {:X}", detourResult);
             return nullptr;
@@ -107,11 +106,10 @@ class DxgiProxy
     {
         auto addr = CreateDxgiFactory1_ForHook();
 
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
-        DetourAttach(&(PVOID&) addr, method);
-        auto detourResult = DetourTransactionCommit();
-        if (detourResult != NO_ERROR)
+        HookBackend::Begin();
+        HookBackend::Attach(&(PVOID&) addr, method);
+        auto detourResult = HookBackend::Commit();
+        if (FAILED(detourResult))
         {
             LOG_ERROR("Failed to hook: {:X}", detourResult);
             return nullptr;
@@ -125,11 +123,10 @@ class DxgiProxy
     {
         auto addr = CreateDxgiFactory2_ForHook();
 
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
-        DetourAttach(&(PVOID&) addr, method);
-        auto detourResult = DetourTransactionCommit();
-        if (detourResult != NO_ERROR)
+        HookBackend::Begin();
+        HookBackend::Attach(&(PVOID&) addr, method);
+        auto detourResult = HookBackend::Commit();
+        if (FAILED(detourResult))
         {
             LOG_ERROR("Failed to hook: {:X}", detourResult);
             return nullptr;
@@ -143,11 +140,10 @@ class DxgiProxy
     {
         auto addr = DeclareAdepterRemovalSupport_ForHook();
 
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
-        DetourAttach(&(PVOID&) addr, method);
-        auto detourResult = DetourTransactionCommit();
-        if (detourResult != NO_ERROR)
+        HookBackend::Begin();
+        HookBackend::Attach(&(PVOID&) addr, method);
+        auto detourResult = HookBackend::Commit();
+        if (FAILED(detourResult))
         {
             LOG_ERROR("Failed to hook: {:X}", detourResult);
             return nullptr;
@@ -161,11 +157,10 @@ class DxgiProxy
     {
         auto addr = GetDebugInterface_ForHook();
 
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
-        DetourAttach(&(PVOID&) addr, method);
-        auto detourResult = DetourTransactionCommit();
-        if (detourResult != NO_ERROR)
+        HookBackend::Begin();
+        HookBackend::Attach(&(PVOID&) addr, method);
+        auto detourResult = HookBackend::Commit();
+        if (FAILED(detourResult))
         {
             LOG_ERROR("Failed to hook: {:X}", detourResult);
             return nullptr;
@@ -177,11 +172,10 @@ class DxgiProxy
 
     static void Unhook(PVOID addr, PVOID method)
     {
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
-        DetourDetach(&(PVOID&) addr, method);
-        auto detourResult = DetourTransactionCommit();
-        if (detourResult != NO_ERROR)
+        HookBackend::Begin();
+        HookBackend::Detach(&(PVOID&) addr, method);
+        auto detourResult = HookBackend::Commit();
+        if (FAILED(detourResult))
         {
             LOG_ERROR("Failed to unhook: {:X}", detourResult);
             return;

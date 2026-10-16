@@ -3,7 +3,7 @@
 #include <Config.h>
 #include <Util.h>
 
-#include <detours/detours.h>
+#include <hooks/HookBackend.h>
 
 void DLSSDFeature::ProcessEvaluateParams(NVSDK_NGX_Parameter* InParameters)
 {

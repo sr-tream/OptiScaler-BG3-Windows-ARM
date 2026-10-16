@@ -16,7 +16,7 @@
 #include <proxies/KernelBase_Proxy.h>
 #include <hooks/Reflex_Hooks.h>
 
-#include <detours/detours.h>
+#include <hooks/HookBackend.h>
 
 #include <dxgi1_6.h>
 #include <misc/IdentifyGpu.h>
@@ -922,7 +922,7 @@ static void LoadCmdListHooks(PVOID* vtable, bool late)
 template <typename T, typename D> static void AttachIf(bool condition, T& target, D detour)
 {
     if (condition && target != nullptr)
-        DetourAttach(reinterpret_cast<PVOID*>(&target), reinterpret_cast<PVOID>(detour));
+        HookBackend::Attach(reinterpret_cast<PVOID*>(&target), reinterpret_cast<PVOID>(detour));
 }
 
 struct CmdListHookConfig
@@ -964,8 +964,7 @@ void D3D12Hooks::HookToCommandListLate(ID3D12GraphicsCommandList* commandList)
     const bool computeArgs = c.extended && c.restoreCompute;
     const bool graphicsArgs = c.extended && c.restoreGraphics;
 
-    DetourTransactionBegin();
-    DetourUpdateThread(GetCurrentThread());
+    HookBackend::Begin();
 
     // Common
     AttachIf(c.restoreCompute || c.restoreGraphics, s_Reset.o_lateHook, hkResetLate);
@@ -990,7 +989,7 @@ void D3D12Hooks::HookToCommandListLate(ID3D12GraphicsCommandList* commandList)
     AttachIf(graphicsArgs, s_SetGraphicsRootShaderResourceView.o_lateHook, hkSetGraphicsRootShaderResourceViewLate);
     AttachIf(graphicsArgs, s_SetGraphicsRootUnorderedAccessView.o_lateHook, hkSetGraphicsRootUnorderedAccessViewLate);
 
-    if (DetourTransactionCommit() == NO_ERROR)
+    if (SUCCEEDED(HookBackend::Commit()))
     {
         LOG_DEBUG("Hooked command list functions Late");
     }
@@ -1021,8 +1020,7 @@ static void HookToCommandList(ID3D12Device* InDevice)
         const bool computeArgs = c.extended && c.restoreCompute;
         const bool graphicsArgs = c.extended && c.restoreGraphics;
 
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
+        HookBackend::Begin();
 
         // Common
         AttachIf(c.restoreCompute || c.restoreGraphics, s_Reset.o_earlyHook, hkReset);
@@ -1049,7 +1047,7 @@ static void HookToCommandList(ID3D12Device* InDevice)
         AttachIf(graphicsArgs, s_SetGraphicsRootShaderResourceView.o_earlyHook, hkSetGraphicsRootShaderResourceView);
         AttachIf(graphicsArgs, s_SetGraphicsRootUnorderedAccessView.o_earlyHook, hkSetGraphicsRootUnorderedAccessView);
 
-        if (DetourTransactionCommit() == NO_ERROR)
+        if (SUCCEEDED(HookBackend::Commit()))
         {
             LOG_DEBUG("Hooked command list functions");
         }
@@ -2193,11 +2191,10 @@ static HRESULT hkD3D12GetInterface(REFCLSID rclsid, REFIID riid, void** ppvDebug
         {
             LOG_DEBUG("Detouring ID3D12DeviceFactory::CreateDevice");
 
-            DetourTransactionBegin();
-            DetourUpdateThread(GetCurrentThread());
-            DetourAttach(&(PVOID&) o_CreateDevice, hkCreateDevice);
-            auto detourResult = DetourTransactionCommit();
-            if (detourResult != NO_ERROR)
+            HookBackend::Begin();
+            HookBackend::Attach(&(PVOID&) o_CreateDevice, hkCreateDevice);
+            auto detourResult = HookBackend::Commit();
+            if (FAILED(detourResult))
             {
                 LOG_ERROR("Failed to detour ID3D12DeviceFactory::CreateDevice, error: {:X}", detourResult);
                 o_CreateDevice = nullptr;
@@ -2247,42 +2244,41 @@ static void HookToDevice(ID3D12Device* InDevice)
     // Apply the detour
     if (o_CreateSampler != nullptr)
     {
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
+        HookBackend::Begin();
 
         if (o_CreateSampler != nullptr)
-            DetourAttach(&(PVOID&) o_CreateSampler, hkCreateSampler);
+            HookBackend::Attach(&(PVOID&) o_CreateSampler, hkCreateSampler);
 
         if (o_CreateRootSignature != nullptr)
-            DetourAttach(&(PVOID&) o_CreateRootSignature, hkCreateRootSignature);
+            HookBackend::Attach(&(PVOID&) o_CreateRootSignature, hkCreateRootSignature);
 
         // Will be used for tracking current d3d12 device too
         if (o_D3D12DeviceRelease != nullptr)
-            DetourAttach(&(PVOID&) o_D3D12DeviceRelease, hkD3D12DeviceRelease);
+            HookBackend::Attach(&(PVOID&) o_D3D12DeviceRelease, hkD3D12DeviceRelease);
 
         // HACK: see reason in hkSetResidencyPriority
         if (o_SetResidencyPriority != nullptr)
-            DetourAttach(&(PVOID&) o_SetResidencyPriority, hkSetResidencyPriority);
+            HookBackend::Attach(&(PVOID&) o_SetResidencyPriority, hkSetResidencyPriority);
 
         if (Config::Instance()->UESpoofIntelAtomics64.value_or_default())
         {
             LOG_DEBUG("UE spoofing for Intel Atomics64 enabled, applying detours");
 
             if (o_CheckFeatureSupport != nullptr)
-                DetourAttach(&(PVOID&) o_CheckFeatureSupport, hkCheckFeatureSupport);
+                HookBackend::Attach(&(PVOID&) o_CheckFeatureSupport, hkCheckFeatureSupport);
 
             if (o_CreateCommittedResource != nullptr)
-                DetourAttach(&(PVOID&) o_CreateCommittedResource, hkCreateCommittedResource);
+                HookBackend::Attach(&(PVOID&) o_CreateCommittedResource, hkCreateCommittedResource);
 
             if (o_CreatePlacedResource != nullptr)
-                DetourAttach(&(PVOID&) o_CreatePlacedResource, hkCreatePlacedResource);
+                HookBackend::Attach(&(PVOID&) o_CreatePlacedResource, hkCreatePlacedResource);
 
             if (o_GetResourceAllocationInfo != nullptr)
-                DetourAttach(&(PVOID&) o_GetResourceAllocationInfo, hkGetResourceAllocationInfo);
+                HookBackend::Attach(&(PVOID&) o_GetResourceAllocationInfo, hkGetResourceAllocationInfo);
         }
 
-        auto detourResult = DetourTransactionCommit();
-        if (detourResult != NO_ERROR)
+        auto detourResult = HookBackend::Commit();
+        if (FAILED(detourResult))
         {
             LOG_ERROR("Failed to detour ID3D12Device methods, error: {:X}", detourResult);
             o_CreateSampler = nullptr;
@@ -2317,32 +2313,31 @@ static void UnhookDevice()
 {
     LOG_FUNC();
 
-    DetourTransactionBegin();
-    DetourUpdateThread(GetCurrentThread());
+    HookBackend::Begin();
 
     if (o_CreateSampler != nullptr)
-        DetourDetach(&(PVOID&) o_CreateSampler, hkCreateSampler);
+        HookBackend::Detach(&(PVOID&) o_CreateSampler, hkCreateSampler);
 
     if (o_CreateRootSignature != nullptr)
-        DetourDetach(&(PVOID&) o_CreateRootSignature, hkCreateRootSignature);
+        HookBackend::Detach(&(PVOID&) o_CreateRootSignature, hkCreateRootSignature);
 
     if (o_CheckFeatureSupport != nullptr)
-        DetourDetach(&(PVOID&) o_CheckFeatureSupport, hkCheckFeatureSupport);
+        HookBackend::Detach(&(PVOID&) o_CheckFeatureSupport, hkCheckFeatureSupport);
 
     if (o_CreateCommittedResource != nullptr)
-        DetourDetach(&(PVOID&) o_CreateCommittedResource, hkCreateCommittedResource);
+        HookBackend::Detach(&(PVOID&) o_CreateCommittedResource, hkCreateCommittedResource);
 
     if (o_CreatePlacedResource != nullptr)
-        DetourDetach(&(PVOID&) o_CreatePlacedResource, hkCreatePlacedResource);
+        HookBackend::Detach(&(PVOID&) o_CreatePlacedResource, hkCreatePlacedResource);
 
     if (o_D3D12DeviceRelease != nullptr)
-        DetourDetach(&(PVOID&) o_D3D12DeviceRelease, hkD3D12DeviceRelease);
+        HookBackend::Detach(&(PVOID&) o_D3D12DeviceRelease, hkD3D12DeviceRelease);
 
     if (o_GetResourceAllocationInfo != nullptr)
-        DetourDetach(&(PVOID&) o_GetResourceAllocationInfo, hkGetResourceAllocationInfo);
+        HookBackend::Detach(&(PVOID&) o_GetResourceAllocationInfo, hkGetResourceAllocationInfo);
 
-    auto detourResult = DetourTransactionCommit();
-    if (detourResult != NO_ERROR)
+    auto detourResult = HookBackend::Commit();
+    if (FAILED(detourResult))
     {
         LOG_ERROR("Failed to unhook ID3D12Device methods, error: {:X}", detourResult);
     }
@@ -2389,11 +2384,10 @@ void D3D12Hooks::HookAgility(HMODULE module)
 
     if (o_D3D12GetInterface != nullptr)
     {
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
-        DetourAttach(&(PVOID&) o_D3D12GetInterface, hkD3D12GetInterface);
-        auto detourResult = DetourTransactionCommit();
-        if (detourResult != NO_ERROR)
+        HookBackend::Begin();
+        HookBackend::Attach(&(PVOID&) o_D3D12GetInterface, hkD3D12GetInterface);
+        auto detourResult = HookBackend::Commit();
+        if (FAILED(detourResult))
         {
             LOG_ERROR("Failed to detour D3D12GetInterface, error: {:X}", detourResult);
             o_D3D12GetInterface = nullptr;
@@ -2406,29 +2400,28 @@ void D3D12Hooks::Unhook()
     if (o_D3D12CreateDevice == nullptr)
         return;
 
-    DetourTransactionBegin();
-    DetourUpdateThread(GetCurrentThread());
+    HookBackend::Begin();
 
     if (o_CreateSampler != nullptr)
-        DetourDetach(&(PVOID&) o_CreateSampler, hkCreateSampler);
+        HookBackend::Detach(&(PVOID&) o_CreateSampler, hkCreateSampler);
 
     if (o_CheckFeatureSupport != nullptr)
-        DetourDetach(&(PVOID&) o_CheckFeatureSupport, hkCheckFeatureSupport);
+        HookBackend::Detach(&(PVOID&) o_CheckFeatureSupport, hkCheckFeatureSupport);
 
     if (o_CreateCommittedResource != nullptr)
-        DetourDetach(&(PVOID&) o_CreateCommittedResource, hkCreateCommittedResource);
+        HookBackend::Detach(&(PVOID&) o_CreateCommittedResource, hkCreateCommittedResource);
 
     if (o_CreatePlacedResource != nullptr)
-        DetourDetach(&(PVOID&) o_CreatePlacedResource, hkCreatePlacedResource);
+        HookBackend::Detach(&(PVOID&) o_CreatePlacedResource, hkCreatePlacedResource);
 
     if (o_GetResourceAllocationInfo != nullptr)
-        DetourDetach(&(PVOID&) o_GetResourceAllocationInfo, hkGetResourceAllocationInfo);
+        HookBackend::Detach(&(PVOID&) o_GetResourceAllocationInfo, hkGetResourceAllocationInfo);
 
     if (o_D3D12DeviceRelease != nullptr)
-        DetourDetach(&(PVOID&) o_D3D12DeviceRelease, hkD3D12DeviceRelease);
+        HookBackend::Detach(&(PVOID&) o_D3D12DeviceRelease, hkD3D12DeviceRelease);
 
-    auto detourResult = DetourTransactionCommit();
-    if (detourResult != NO_ERROR)
+    auto detourResult = HookBackend::Commit();
+    if (FAILED(detourResult))
     {
         LOG_ERROR("Failed to unhook ID3D12Device methods, error: {:X}", detourResult);
     }

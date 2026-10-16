@@ -1,0 +1,3 @@
+KNSoft.SlimDetours 1.2.3-beta
+Official NuGet package: https://www.nuget.org/packages/KNSoft.SlimDetours/1.2.3-beta
+SHA256: 5A5F6446A01C02D30ACD9EF4E81414C1ABA1D5AF7AFF4D7ECAFAE00218F7417B

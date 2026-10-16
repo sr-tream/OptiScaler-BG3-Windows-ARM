@@ -7,7 +7,8 @@
 
 #include <magic_enum.hpp>
 
-#include <detours/detours.h>
+#include <hooks/HookBackend.h>
+#include <inputs/Bg3Fsr2_Vk.h>
 
 #include <vulkan/vulkan_core.h>
 #include <misc/IdentifyGpu.h>
@@ -6694,6 +6695,10 @@ PFN_vkVoidFunction Vulkan_wDx12::GetAddress(const PFN_vkVoidFunction original, c
     if (original == nullptr || pName == nullptr)
         return VK_NULL_HANDLE;
 
+    // Extension-spoofing paths also resolve command functions here, bypassing VulkanHooks' resolver.
+    if (auto observer = Bg3Fsr2::GetAddress(pName, original))
+        return observer;
+
     auto procName = std::string(pName);
 
     if (procName == std::string("vkQueueSubmit"))
@@ -9681,860 +9686,859 @@ void Vulkan_wDx12::Hook(HMODULE vulkanModule)
     {
         LOG_INFO("Attaching Vulkan vkQueueSubmit hook");
 
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
+        HookBackend::Begin();
 
         if (o_vkQueueSubmit)
-            DetourAttach(&(PVOID&) o_vkQueueSubmit, hk_vkQueueSubmit);
+            HookBackend::Attach(&(PVOID&) o_vkQueueSubmit, hk_vkQueueSubmit);
 
         if (o_vkQueueSubmit2)
-            DetourAttach(&(PVOID&) o_vkQueueSubmit2, hk_vkQueueSubmit2);
+            HookBackend::Attach(&(PVOID&) o_vkQueueSubmit2, hk_vkQueueSubmit2);
 
         if (o_vkQueueSubmit2KHR)
-            DetourAttach(&(PVOID&) o_vkQueueSubmit2KHR, hk_vkQueueSubmit2KHR);
+            HookBackend::Attach(&(PVOID&) o_vkQueueSubmit2KHR, hk_vkQueueSubmit2KHR);
 
         if (o_vkBeginCommandBuffer)
-            DetourAttach(&(PVOID&) o_vkBeginCommandBuffer, hk_vkBeginCommandBuffer);
+            HookBackend::Attach(&(PVOID&) o_vkBeginCommandBuffer, hk_vkBeginCommandBuffer);
 
         if (o_vkEndCommandBuffer)
-            DetourAttach(&(PVOID&) o_vkEndCommandBuffer, hk_vkEndCommandBuffer);
+            HookBackend::Attach(&(PVOID&) o_vkEndCommandBuffer, hk_vkEndCommandBuffer);
 
         if (o_vkResetCommandBuffer)
-            DetourAttach(&(PVOID&) o_vkResetCommandBuffer, hk_vkResetCommandBuffer);
+            HookBackend::Attach(&(PVOID&) o_vkResetCommandBuffer, hk_vkResetCommandBuffer);
 
         if (o_vkFreeCommandBuffers)
-            DetourAttach(&(PVOID&) o_vkFreeCommandBuffers, hk_vkFreeCommandBuffers);
+            HookBackend::Attach(&(PVOID&) o_vkFreeCommandBuffers, hk_vkFreeCommandBuffers);
 
         if (o_vkAllocateCommandBuffers != nullptr)
-            DetourAttach(&(PVOID&) o_vkAllocateCommandBuffers, hk_vkAllocateCommandBuffers);
+            HookBackend::Attach(&(PVOID&) o_vkAllocateCommandBuffers, hk_vkAllocateCommandBuffers);
 
         if (o_vkResetCommandPool != nullptr)
-            DetourAttach(&(PVOID&) o_vkResetCommandPool, hk_vkResetCommandPool);
+            HookBackend::Attach(&(PVOID&) o_vkResetCommandPool, hk_vkResetCommandPool);
 
         if (o_vkDestroyCommandPool != nullptr)
-            DetourAttach(&(PVOID&) o_vkDestroyCommandPool, hk_vkDestroyCommandPool);
+            HookBackend::Attach(&(PVOID&) o_vkDestroyCommandPool, hk_vkDestroyCommandPool);
 
         if (o_vkCmdExecuteCommands)
-            DetourAttach(&(PVOID&) o_vkCmdExecuteCommands, hk_vkCmdExecuteCommands);
+            HookBackend::Attach(&(PVOID&) o_vkCmdExecuteCommands, hk_vkCmdExecuteCommands);
 
         if (o_vkCreateCommandPool)
-            DetourAttach(&(PVOID&) o_vkCreateCommandPool, hk_vkCreateCommandPool);
+            HookBackend::Attach(&(PVOID&) o_vkCreateCommandPool, hk_vkCreateCommandPool);
 
 #pragma region CommandBuffer detours
 
         if (o_vkCmdBindPipeline)
-            DetourAttach(&(PVOID&) o_vkCmdBindPipeline, hk_vkCmdBindPipeline);
+            HookBackend::Attach(&(PVOID&) o_vkCmdBindPipeline, hk_vkCmdBindPipeline);
 
         if (o_vkCmdSetViewport)
-            DetourAttach(&(PVOID&) o_vkCmdSetViewport, hk_vkCmdSetViewport);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetViewport, hk_vkCmdSetViewport);
 
         if (o_vkCmdSetScissor)
-            DetourAttach(&(PVOID&) o_vkCmdSetScissor, hk_vkCmdSetScissor);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetScissor, hk_vkCmdSetScissor);
 
         if (o_vkCmdSetLineWidth)
-            DetourAttach(&(PVOID&) o_vkCmdSetLineWidth, hk_vkCmdSetLineWidth);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetLineWidth, hk_vkCmdSetLineWidth);
 
         if (o_vkCmdSetDepthBias)
-            DetourAttach(&(PVOID&) o_vkCmdSetDepthBias, hk_vkCmdSetDepthBias);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetDepthBias, hk_vkCmdSetDepthBias);
 
         if (o_vkCmdSetBlendConstants)
-            DetourAttach(&(PVOID&) o_vkCmdSetBlendConstants, hk_vkCmdSetBlendConstants);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetBlendConstants, hk_vkCmdSetBlendConstants);
 
         if (o_vkCmdSetDepthBounds)
-            DetourAttach(&(PVOID&) o_vkCmdSetDepthBounds, hk_vkCmdSetDepthBounds);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetDepthBounds, hk_vkCmdSetDepthBounds);
 
         if (o_vkCmdSetStencilCompareMask)
-            DetourAttach(&(PVOID&) o_vkCmdSetStencilCompareMask, hk_vkCmdSetStencilCompareMask);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetStencilCompareMask, hk_vkCmdSetStencilCompareMask);
 
         if (o_vkCmdSetStencilWriteMask)
-            DetourAttach(&(PVOID&) o_vkCmdSetStencilWriteMask, hk_vkCmdSetStencilWriteMask);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetStencilWriteMask, hk_vkCmdSetStencilWriteMask);
 
         if (o_vkCmdSetStencilReference)
-            DetourAttach(&(PVOID&) o_vkCmdSetStencilReference, hk_vkCmdSetStencilReference);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetStencilReference, hk_vkCmdSetStencilReference);
 
         if (o_vkCmdBindDescriptorSets)
-            DetourAttach(&(PVOID&) o_vkCmdBindDescriptorSets, hk_vkCmdBindDescriptorSets);
+            HookBackend::Attach(&(PVOID&) o_vkCmdBindDescriptorSets, hk_vkCmdBindDescriptorSets);
 
         if (o_vkCmdBindIndexBuffer)
-            DetourAttach(&(PVOID&) o_vkCmdBindIndexBuffer, hk_vkCmdBindIndexBuffer);
+            HookBackend::Attach(&(PVOID&) o_vkCmdBindIndexBuffer, hk_vkCmdBindIndexBuffer);
 
         if (o_vkCmdBindVertexBuffers)
-            DetourAttach(&(PVOID&) o_vkCmdBindVertexBuffers, hk_vkCmdBindVertexBuffers);
+            HookBackend::Attach(&(PVOID&) o_vkCmdBindVertexBuffers, hk_vkCmdBindVertexBuffers);
 
         if (o_vkCmdDraw)
-            DetourAttach(&(PVOID&) o_vkCmdDraw, hk_vkCmdDraw);
+            HookBackend::Attach(&(PVOID&) o_vkCmdDraw, hk_vkCmdDraw);
 
         if (o_vkCmdDrawIndexed)
-            DetourAttach(&(PVOID&) o_vkCmdDrawIndexed, hk_vkCmdDrawIndexed);
+            HookBackend::Attach(&(PVOID&) o_vkCmdDrawIndexed, hk_vkCmdDrawIndexed);
 
         if (o_vkCmdDrawIndirect)
-            DetourAttach(&(PVOID&) o_vkCmdDrawIndirect, hk_vkCmdDrawIndirect);
+            HookBackend::Attach(&(PVOID&) o_vkCmdDrawIndirect, hk_vkCmdDrawIndirect);
 
         if (o_vkCmdDrawIndexedIndirect)
-            DetourAttach(&(PVOID&) o_vkCmdDrawIndexedIndirect, hk_vkCmdDrawIndexedIndirect);
+            HookBackend::Attach(&(PVOID&) o_vkCmdDrawIndexedIndirect, hk_vkCmdDrawIndexedIndirect);
 
         if (o_vkCmdDispatch)
-            DetourAttach(&(PVOID&) o_vkCmdDispatch, hk_vkCmdDispatch);
+            HookBackend::Attach(&(PVOID&) o_vkCmdDispatch, hk_vkCmdDispatch);
 
         if (o_vkCmdDispatchIndirect)
-            DetourAttach(&(PVOID&) o_vkCmdDispatchIndirect, hk_vkCmdDispatchIndirect);
+            HookBackend::Attach(&(PVOID&) o_vkCmdDispatchIndirect, hk_vkCmdDispatchIndirect);
 
         if (o_vkCmdCopyBuffer)
-            DetourAttach(&(PVOID&) o_vkCmdCopyBuffer, hk_vkCmdCopyBuffer);
+            HookBackend::Attach(&(PVOID&) o_vkCmdCopyBuffer, hk_vkCmdCopyBuffer);
 
         if (o_vkCmdCopyImage)
-            DetourAttach(&(PVOID&) o_vkCmdCopyImage, hk_vkCmdCopyImage);
+            HookBackend::Attach(&(PVOID&) o_vkCmdCopyImage, hk_vkCmdCopyImage);
 
         if (o_vkCmdBlitImage)
-            DetourAttach(&(PVOID&) o_vkCmdBlitImage, hk_vkCmdBlitImage);
+            HookBackend::Attach(&(PVOID&) o_vkCmdBlitImage, hk_vkCmdBlitImage);
 
         if (o_vkCmdCopyBufferToImage)
-            DetourAttach(&(PVOID&) o_vkCmdCopyBufferToImage, hk_vkCmdCopyBufferToImage);
+            HookBackend::Attach(&(PVOID&) o_vkCmdCopyBufferToImage, hk_vkCmdCopyBufferToImage);
 
         if (o_vkCmdCopyImageToBuffer)
-            DetourAttach(&(PVOID&) o_vkCmdCopyImageToBuffer, hk_vkCmdCopyImageToBuffer);
+            HookBackend::Attach(&(PVOID&) o_vkCmdCopyImageToBuffer, hk_vkCmdCopyImageToBuffer);
 
         if (o_vkCmdUpdateBuffer)
-            DetourAttach(&(PVOID&) o_vkCmdUpdateBuffer, hk_vkCmdUpdateBuffer);
+            HookBackend::Attach(&(PVOID&) o_vkCmdUpdateBuffer, hk_vkCmdUpdateBuffer);
 
         if (o_vkCmdFillBuffer)
-            DetourAttach(&(PVOID&) o_vkCmdFillBuffer, hk_vkCmdFillBuffer);
+            HookBackend::Attach(&(PVOID&) o_vkCmdFillBuffer, hk_vkCmdFillBuffer);
 
         if (o_vkCmdClearColorImage)
-            DetourAttach(&(PVOID&) o_vkCmdClearColorImage, hk_vkCmdClearColorImage);
+            HookBackend::Attach(&(PVOID&) o_vkCmdClearColorImage, hk_vkCmdClearColorImage);
 
         if (o_vkCmdClearDepthStencilImage)
-            DetourAttach(&(PVOID&) o_vkCmdClearDepthStencilImage, hk_vkCmdClearDepthStencilImage);
+            HookBackend::Attach(&(PVOID&) o_vkCmdClearDepthStencilImage, hk_vkCmdClearDepthStencilImage);
 
         if (o_vkCmdClearAttachments)
-            DetourAttach(&(PVOID&) o_vkCmdClearAttachments, hk_vkCmdClearAttachments);
+            HookBackend::Attach(&(PVOID&) o_vkCmdClearAttachments, hk_vkCmdClearAttachments);
 
         if (o_vkCmdResolveImage)
-            DetourAttach(&(PVOID&) o_vkCmdResolveImage, hk_vkCmdResolveImage);
+            HookBackend::Attach(&(PVOID&) o_vkCmdResolveImage, hk_vkCmdResolveImage);
 
         if (o_vkCmdSetEvent)
-            DetourAttach(&(PVOID&) o_vkCmdSetEvent, hk_vkCmdSetEvent);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetEvent, hk_vkCmdSetEvent);
 
         if (o_vkCmdResetEvent)
-            DetourAttach(&(PVOID&) o_vkCmdResetEvent, hk_vkCmdResetEvent);
+            HookBackend::Attach(&(PVOID&) o_vkCmdResetEvent, hk_vkCmdResetEvent);
 
         if (o_vkCmdWaitEvents)
-            DetourAttach(&(PVOID&) o_vkCmdWaitEvents, hk_vkCmdWaitEvents);
+            HookBackend::Attach(&(PVOID&) o_vkCmdWaitEvents, hk_vkCmdWaitEvents);
 
         if (o_vkCmdPipelineBarrier)
-            DetourAttach(&(PVOID&) o_vkCmdPipelineBarrier, hk_vkCmdPipelineBarrier);
+            HookBackend::Attach(&(PVOID&) o_vkCmdPipelineBarrier, hk_vkCmdPipelineBarrier);
 
         if (o_vkCmdBeginQuery)
-            DetourAttach(&(PVOID&) o_vkCmdBeginQuery, hk_vkCmdBeginQuery);
+            HookBackend::Attach(&(PVOID&) o_vkCmdBeginQuery, hk_vkCmdBeginQuery);
 
         if (o_vkCmdEndQuery)
-            DetourAttach(&(PVOID&) o_vkCmdEndQuery, hk_vkCmdEndQuery);
+            HookBackend::Attach(&(PVOID&) o_vkCmdEndQuery, hk_vkCmdEndQuery);
 
         if (o_vkCmdResetQueryPool)
-            DetourAttach(&(PVOID&) o_vkCmdResetQueryPool, hk_vkCmdResetQueryPool);
+            HookBackend::Attach(&(PVOID&) o_vkCmdResetQueryPool, hk_vkCmdResetQueryPool);
 
         if (o_vkCmdWriteTimestamp)
-            DetourAttach(&(PVOID&) o_vkCmdWriteTimestamp, hk_vkCmdWriteTimestamp);
+            HookBackend::Attach(&(PVOID&) o_vkCmdWriteTimestamp, hk_vkCmdWriteTimestamp);
 
         if (o_vkCmdCopyQueryPoolResults)
-            DetourAttach(&(PVOID&) o_vkCmdCopyQueryPoolResults, hk_vkCmdCopyQueryPoolResults);
+            HookBackend::Attach(&(PVOID&) o_vkCmdCopyQueryPoolResults, hk_vkCmdCopyQueryPoolResults);
 
         if (o_vkCmdPushConstants)
-            DetourAttach(&(PVOID&) o_vkCmdPushConstants, hk_vkCmdPushConstants);
+            HookBackend::Attach(&(PVOID&) o_vkCmdPushConstants, hk_vkCmdPushConstants);
 
         if (o_vkCmdBeginRenderPass)
-            DetourAttach(&(PVOID&) o_vkCmdBeginRenderPass, hk_vkCmdBeginRenderPass);
+            HookBackend::Attach(&(PVOID&) o_vkCmdBeginRenderPass, hk_vkCmdBeginRenderPass);
 
         if (o_vkCmdNextSubpass)
-            DetourAttach(&(PVOID&) o_vkCmdNextSubpass, hk_vkCmdNextSubpass);
+            HookBackend::Attach(&(PVOID&) o_vkCmdNextSubpass, hk_vkCmdNextSubpass);
 
         if (o_vkCmdEndRenderPass)
-            DetourAttach(&(PVOID&) o_vkCmdEndRenderPass, hk_vkCmdEndRenderPass);
+            HookBackend::Attach(&(PVOID&) o_vkCmdEndRenderPass, hk_vkCmdEndRenderPass);
 
         if (o_vkCmdSetDeviceMask)
-            DetourAttach(&(PVOID&) o_vkCmdSetDeviceMask, hk_vkCmdSetDeviceMask);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetDeviceMask, hk_vkCmdSetDeviceMask);
 
         if (o_vkCmdDispatchBase)
-            DetourAttach(&(PVOID&) o_vkCmdDispatchBase, hk_vkCmdDispatchBase);
+            HookBackend::Attach(&(PVOID&) o_vkCmdDispatchBase, hk_vkCmdDispatchBase);
 
         if (o_vkCmdDrawIndirectCount)
-            DetourAttach(&(PVOID&) o_vkCmdDrawIndirectCount, hk_vkCmdDrawIndirectCount);
+            HookBackend::Attach(&(PVOID&) o_vkCmdDrawIndirectCount, hk_vkCmdDrawIndirectCount);
 
         if (o_vkCmdDrawIndexedIndirectCount)
-            DetourAttach(&(PVOID&) o_vkCmdDrawIndexedIndirectCount, hk_vkCmdDrawIndexedIndirectCount);
+            HookBackend::Attach(&(PVOID&) o_vkCmdDrawIndexedIndirectCount, hk_vkCmdDrawIndexedIndirectCount);
 
         if (o_vkCmdBeginRenderPass2)
-            DetourAttach(&(PVOID&) o_vkCmdBeginRenderPass2, hk_vkCmdBeginRenderPass2);
+            HookBackend::Attach(&(PVOID&) o_vkCmdBeginRenderPass2, hk_vkCmdBeginRenderPass2);
 
         if (o_vkCmdNextSubpass2)
-            DetourAttach(&(PVOID&) o_vkCmdNextSubpass2, hk_vkCmdNextSubpass2);
+            HookBackend::Attach(&(PVOID&) o_vkCmdNextSubpass2, hk_vkCmdNextSubpass2);
 
         if (o_vkCmdEndRenderPass2)
-            DetourAttach(&(PVOID&) o_vkCmdEndRenderPass2, hk_vkCmdEndRenderPass2);
+            HookBackend::Attach(&(PVOID&) o_vkCmdEndRenderPass2, hk_vkCmdEndRenderPass2);
 
         if (o_vkCmdSetEvent2)
-            DetourAttach(&(PVOID&) o_vkCmdSetEvent2, hk_vkCmdSetEvent2);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetEvent2, hk_vkCmdSetEvent2);
 
         if (o_vkCmdResetEvent2)
-            DetourAttach(&(PVOID&) o_vkCmdResetEvent2, hk_vkCmdResetEvent2);
+            HookBackend::Attach(&(PVOID&) o_vkCmdResetEvent2, hk_vkCmdResetEvent2);
 
         if (o_vkCmdWaitEvents2)
-            DetourAttach(&(PVOID&) o_vkCmdWaitEvents2, hk_vkCmdWaitEvents2);
+            HookBackend::Attach(&(PVOID&) o_vkCmdWaitEvents2, hk_vkCmdWaitEvents2);
 
         if (o_vkCmdPipelineBarrier2)
-            DetourAttach(&(PVOID&) o_vkCmdPipelineBarrier2, hk_vkCmdPipelineBarrier2);
+            HookBackend::Attach(&(PVOID&) o_vkCmdPipelineBarrier2, hk_vkCmdPipelineBarrier2);
 
         if (o_vkCmdWriteTimestamp2)
-            DetourAttach(&(PVOID&) o_vkCmdWriteTimestamp2, hk_vkCmdWriteTimestamp2);
+            HookBackend::Attach(&(PVOID&) o_vkCmdWriteTimestamp2, hk_vkCmdWriteTimestamp2);
 
         if (o_vkCmdCopyBuffer2)
-            DetourAttach(&(PVOID&) o_vkCmdCopyBuffer2, hk_vkCmdCopyBuffer2);
+            HookBackend::Attach(&(PVOID&) o_vkCmdCopyBuffer2, hk_vkCmdCopyBuffer2);
 
         if (o_vkCmdCopyImage2)
-            DetourAttach(&(PVOID&) o_vkCmdCopyImage2, hk_vkCmdCopyImage2);
+            HookBackend::Attach(&(PVOID&) o_vkCmdCopyImage2, hk_vkCmdCopyImage2);
 
         if (o_vkCmdCopyBufferToImage2)
-            DetourAttach(&(PVOID&) o_vkCmdCopyBufferToImage2, hk_vkCmdCopyBufferToImage2);
+            HookBackend::Attach(&(PVOID&) o_vkCmdCopyBufferToImage2, hk_vkCmdCopyBufferToImage2);
 
         if (o_vkCmdCopyImageToBuffer2)
-            DetourAttach(&(PVOID&) o_vkCmdCopyImageToBuffer2, hk_vkCmdCopyImageToBuffer2);
+            HookBackend::Attach(&(PVOID&) o_vkCmdCopyImageToBuffer2, hk_vkCmdCopyImageToBuffer2);
 
         if (o_vkCmdBlitImage2)
-            DetourAttach(&(PVOID&) o_vkCmdBlitImage2, hk_vkCmdBlitImage2);
+            HookBackend::Attach(&(PVOID&) o_vkCmdBlitImage2, hk_vkCmdBlitImage2);
 
         if (o_vkCmdResolveImage2)
-            DetourAttach(&(PVOID&) o_vkCmdResolveImage2, hk_vkCmdResolveImage2);
+            HookBackend::Attach(&(PVOID&) o_vkCmdResolveImage2, hk_vkCmdResolveImage2);
 
         if (o_vkCmdBeginRendering)
-            DetourAttach(&(PVOID&) o_vkCmdBeginRendering, hk_vkCmdBeginRendering);
+            HookBackend::Attach(&(PVOID&) o_vkCmdBeginRendering, hk_vkCmdBeginRendering);
 
         if (o_vkCmdEndRendering)
-            DetourAttach(&(PVOID&) o_vkCmdEndRendering, hk_vkCmdEndRendering);
+            HookBackend::Attach(&(PVOID&) o_vkCmdEndRendering, hk_vkCmdEndRendering);
 
         if (o_vkCmdSetCullMode)
-            DetourAttach(&(PVOID&) o_vkCmdSetCullMode, hk_vkCmdSetCullMode);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetCullMode, hk_vkCmdSetCullMode);
 
         if (o_vkCmdSetFrontFace)
-            DetourAttach(&(PVOID&) o_vkCmdSetFrontFace, hk_vkCmdSetFrontFace);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetFrontFace, hk_vkCmdSetFrontFace);
 
         if (o_vkCmdSetPrimitiveTopology)
-            DetourAttach(&(PVOID&) o_vkCmdSetPrimitiveTopology, hk_vkCmdSetPrimitiveTopology);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetPrimitiveTopology, hk_vkCmdSetPrimitiveTopology);
 
         if (o_vkCmdSetViewportWithCount)
-            DetourAttach(&(PVOID&) o_vkCmdSetViewportWithCount, hk_vkCmdSetViewportWithCount);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetViewportWithCount, hk_vkCmdSetViewportWithCount);
 
         if (o_vkCmdSetScissorWithCount)
-            DetourAttach(&(PVOID&) o_vkCmdSetScissorWithCount, hk_vkCmdSetScissorWithCount);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetScissorWithCount, hk_vkCmdSetScissorWithCount);
 
         if (o_vkCmdBindVertexBuffers2)
-            DetourAttach(&(PVOID&) o_vkCmdBindVertexBuffers2, hk_vkCmdBindVertexBuffers2);
+            HookBackend::Attach(&(PVOID&) o_vkCmdBindVertexBuffers2, hk_vkCmdBindVertexBuffers2);
 
         if (o_vkCmdSetDepthTestEnable)
-            DetourAttach(&(PVOID&) o_vkCmdSetDepthTestEnable, hk_vkCmdSetDepthTestEnable);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetDepthTestEnable, hk_vkCmdSetDepthTestEnable);
 
         if (o_vkCmdSetDepthWriteEnable)
-            DetourAttach(&(PVOID&) o_vkCmdSetDepthWriteEnable, hk_vkCmdSetDepthWriteEnable);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetDepthWriteEnable, hk_vkCmdSetDepthWriteEnable);
 
         if (o_vkCmdSetDepthCompareOp)
-            DetourAttach(&(PVOID&) o_vkCmdSetDepthCompareOp, hk_vkCmdSetDepthCompareOp);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetDepthCompareOp, hk_vkCmdSetDepthCompareOp);
 
         if (o_vkCmdSetDepthBoundsTestEnable)
-            DetourAttach(&(PVOID&) o_vkCmdSetDepthBoundsTestEnable, hk_vkCmdSetDepthBoundsTestEnable);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetDepthBoundsTestEnable, hk_vkCmdSetDepthBoundsTestEnable);
 
         if (o_vkCmdSetStencilTestEnable)
-            DetourAttach(&(PVOID&) o_vkCmdSetStencilTestEnable, hk_vkCmdSetStencilTestEnable);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetStencilTestEnable, hk_vkCmdSetStencilTestEnable);
 
         if (o_vkCmdSetStencilOp)
-            DetourAttach(&(PVOID&) o_vkCmdSetStencilOp, hk_vkCmdSetStencilOp);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetStencilOp, hk_vkCmdSetStencilOp);
 
         if (o_vkCmdSetRasterizerDiscardEnable)
-            DetourAttach(&(PVOID&) o_vkCmdSetRasterizerDiscardEnable, hk_vkCmdSetRasterizerDiscardEnable);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetRasterizerDiscardEnable, hk_vkCmdSetRasterizerDiscardEnable);
 
         if (o_vkCmdSetDepthBiasEnable)
-            DetourAttach(&(PVOID&) o_vkCmdSetDepthBiasEnable, hk_vkCmdSetDepthBiasEnable);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetDepthBiasEnable, hk_vkCmdSetDepthBiasEnable);
 
         if (o_vkCmdSetPrimitiveRestartEnable)
-            DetourAttach(&(PVOID&) o_vkCmdSetPrimitiveRestartEnable, hk_vkCmdSetPrimitiveRestartEnable);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetPrimitiveRestartEnable, hk_vkCmdSetPrimitiveRestartEnable);
 
         if (o_vkCmdSetLineStipple)
-            DetourAttach(&(PVOID&) o_vkCmdSetLineStipple, hk_vkCmdSetLineStipple);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetLineStipple, hk_vkCmdSetLineStipple);
 
         if (o_vkCmdBindIndexBuffer2)
-            DetourAttach(&(PVOID&) o_vkCmdBindIndexBuffer2, hk_vkCmdBindIndexBuffer2);
+            HookBackend::Attach(&(PVOID&) o_vkCmdBindIndexBuffer2, hk_vkCmdBindIndexBuffer2);
 
         if (o_vkCmdPushDescriptorSet)
-            DetourAttach(&(PVOID&) o_vkCmdPushDescriptorSet, hk_vkCmdPushDescriptorSet);
+            HookBackend::Attach(&(PVOID&) o_vkCmdPushDescriptorSet, hk_vkCmdPushDescriptorSet);
 
         if (o_vkCmdPushDescriptorSetWithTemplate)
-            DetourAttach(&(PVOID&) o_vkCmdPushDescriptorSetWithTemplate, hk_vkCmdPushDescriptorSetWithTemplate);
+            HookBackend::Attach(&(PVOID&) o_vkCmdPushDescriptorSetWithTemplate, hk_vkCmdPushDescriptorSetWithTemplate);
 
         if (o_vkCmdSetRenderingAttachmentLocations)
-            DetourAttach(&(PVOID&) o_vkCmdSetRenderingAttachmentLocations, hk_vkCmdSetRenderingAttachmentLocations);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetRenderingAttachmentLocations, hk_vkCmdSetRenderingAttachmentLocations);
 
         if (o_vkCmdSetRenderingInputAttachmentIndices)
-            DetourAttach(&(PVOID&) o_vkCmdSetRenderingInputAttachmentIndices,
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetRenderingInputAttachmentIndices,
                          hk_vkCmdSetRenderingInputAttachmentIndices);
 
         if (o_vkCmdBindDescriptorSets2)
-            DetourAttach(&(PVOID&) o_vkCmdBindDescriptorSets2, hk_vkCmdBindDescriptorSets2);
+            HookBackend::Attach(&(PVOID&) o_vkCmdBindDescriptorSets2, hk_vkCmdBindDescriptorSets2);
 
         if (o_vkCmdPushConstants2)
-            DetourAttach(&(PVOID&) o_vkCmdPushConstants2, hk_vkCmdPushConstants2);
+            HookBackend::Attach(&(PVOID&) o_vkCmdPushConstants2, hk_vkCmdPushConstants2);
 
         if (o_vkCmdPushDescriptorSet2)
-            DetourAttach(&(PVOID&) o_vkCmdPushDescriptorSet2, hk_vkCmdPushDescriptorSet2);
+            HookBackend::Attach(&(PVOID&) o_vkCmdPushDescriptorSet2, hk_vkCmdPushDescriptorSet2);
 
         if (o_vkCmdPushDescriptorSetWithTemplate2)
-            DetourAttach(&(PVOID&) o_vkCmdPushDescriptorSetWithTemplate2, hk_vkCmdPushDescriptorSetWithTemplate2);
+            HookBackend::Attach(&(PVOID&) o_vkCmdPushDescriptorSetWithTemplate2, hk_vkCmdPushDescriptorSetWithTemplate2);
 
         if (o_vkCmdBeginVideoCodingKHR)
-            DetourAttach(&(PVOID&) o_vkCmdBeginVideoCodingKHR, hk_vkCmdBeginVideoCodingKHR);
+            HookBackend::Attach(&(PVOID&) o_vkCmdBeginVideoCodingKHR, hk_vkCmdBeginVideoCodingKHR);
 
         if (o_vkCmdEndVideoCodingKHR)
-            DetourAttach(&(PVOID&) o_vkCmdEndVideoCodingKHR, hk_vkCmdEndVideoCodingKHR);
+            HookBackend::Attach(&(PVOID&) o_vkCmdEndVideoCodingKHR, hk_vkCmdEndVideoCodingKHR);
 
         if (o_vkCmdControlVideoCodingKHR)
-            DetourAttach(&(PVOID&) o_vkCmdControlVideoCodingKHR, hk_vkCmdControlVideoCodingKHR);
+            HookBackend::Attach(&(PVOID&) o_vkCmdControlVideoCodingKHR, hk_vkCmdControlVideoCodingKHR);
 
         if (o_vkCmdDecodeVideoKHR)
-            DetourAttach(&(PVOID&) o_vkCmdDecodeVideoKHR, hk_vkCmdDecodeVideoKHR);
+            HookBackend::Attach(&(PVOID&) o_vkCmdDecodeVideoKHR, hk_vkCmdDecodeVideoKHR);
 
         if (o_vkCmdBeginRenderingKHR)
-            DetourAttach(&(PVOID&) o_vkCmdBeginRenderingKHR, hk_vkCmdBeginRenderingKHR);
+            HookBackend::Attach(&(PVOID&) o_vkCmdBeginRenderingKHR, hk_vkCmdBeginRenderingKHR);
 
         if (o_vkCmdEndRenderingKHR)
-            DetourAttach(&(PVOID&) o_vkCmdEndRenderingKHR, hk_vkCmdEndRenderingKHR);
+            HookBackend::Attach(&(PVOID&) o_vkCmdEndRenderingKHR, hk_vkCmdEndRenderingKHR);
 
         if (o_vkCmdSetDeviceMaskKHR)
-            DetourAttach(&(PVOID&) o_vkCmdSetDeviceMaskKHR, hk_vkCmdSetDeviceMaskKHR);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetDeviceMaskKHR, hk_vkCmdSetDeviceMaskKHR);
 
         if (o_vkCmdDispatchBaseKHR)
-            DetourAttach(&(PVOID&) o_vkCmdDispatchBaseKHR, hk_vkCmdDispatchBaseKHR);
+            HookBackend::Attach(&(PVOID&) o_vkCmdDispatchBaseKHR, hk_vkCmdDispatchBaseKHR);
 
         if (o_vkCmdPushDescriptorSetKHR)
-            DetourAttach(&(PVOID&) o_vkCmdPushDescriptorSetKHR, hk_vkCmdPushDescriptorSetKHR);
+            HookBackend::Attach(&(PVOID&) o_vkCmdPushDescriptorSetKHR, hk_vkCmdPushDescriptorSetKHR);
 
         if (o_vkCmdPushDescriptorSetWithTemplateKHR)
-            DetourAttach(&(PVOID&) o_vkCmdPushDescriptorSetWithTemplateKHR, hk_vkCmdPushDescriptorSetWithTemplateKHR);
+            HookBackend::Attach(&(PVOID&) o_vkCmdPushDescriptorSetWithTemplateKHR, hk_vkCmdPushDescriptorSetWithTemplateKHR);
 
         if (o_vkCmdBeginRenderPass2KHR)
-            DetourAttach(&(PVOID&) o_vkCmdBeginRenderPass2KHR, hk_vkCmdBeginRenderPass2KHR);
+            HookBackend::Attach(&(PVOID&) o_vkCmdBeginRenderPass2KHR, hk_vkCmdBeginRenderPass2KHR);
 
         if (o_vkCmdNextSubpass2KHR)
-            DetourAttach(&(PVOID&) o_vkCmdNextSubpass2KHR, hk_vkCmdNextSubpass2KHR);
+            HookBackend::Attach(&(PVOID&) o_vkCmdNextSubpass2KHR, hk_vkCmdNextSubpass2KHR);
 
         if (o_vkCmdEndRenderPass2KHR)
-            DetourAttach(&(PVOID&) o_vkCmdEndRenderPass2KHR, hk_vkCmdEndRenderPass2KHR);
+            HookBackend::Attach(&(PVOID&) o_vkCmdEndRenderPass2KHR, hk_vkCmdEndRenderPass2KHR);
 
         if (o_vkCmdDrawIndirectCountKHR)
-            DetourAttach(&(PVOID&) o_vkCmdDrawIndirectCountKHR, hk_vkCmdDrawIndirectCountKHR);
+            HookBackend::Attach(&(PVOID&) o_vkCmdDrawIndirectCountKHR, hk_vkCmdDrawIndirectCountKHR);
 
         if (o_vkCmdDrawIndexedIndirectCountKHR)
-            DetourAttach(&(PVOID&) o_vkCmdDrawIndexedIndirectCountKHR, hk_vkCmdDrawIndexedIndirectCountKHR);
+            HookBackend::Attach(&(PVOID&) o_vkCmdDrawIndexedIndirectCountKHR, hk_vkCmdDrawIndexedIndirectCountKHR);
 
         if (o_vkCmdSetFragmentShadingRateKHR)
-            DetourAttach(&(PVOID&) o_vkCmdSetFragmentShadingRateKHR, hk_vkCmdSetFragmentShadingRateKHR);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetFragmentShadingRateKHR, hk_vkCmdSetFragmentShadingRateKHR);
 
         if (o_vkCmdSetRenderingAttachmentLocationsKHR)
-            DetourAttach(&(PVOID&) o_vkCmdSetRenderingAttachmentLocationsKHR,
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetRenderingAttachmentLocationsKHR,
                          hk_vkCmdSetRenderingAttachmentLocationsKHR);
 
         if (o_vkCmdSetRenderingInputAttachmentIndicesKHR)
-            DetourAttach(&(PVOID&) o_vkCmdSetRenderingInputAttachmentIndicesKHR,
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetRenderingInputAttachmentIndicesKHR,
                          hk_vkCmdSetRenderingInputAttachmentIndicesKHR);
 
         if (o_vkCmdEncodeVideoKHR)
-            DetourAttach(&(PVOID&) o_vkCmdEncodeVideoKHR, hk_vkCmdEncodeVideoKHR);
+            HookBackend::Attach(&(PVOID&) o_vkCmdEncodeVideoKHR, hk_vkCmdEncodeVideoKHR);
 
         if (o_vkCmdSetEvent2KHR)
-            DetourAttach(&(PVOID&) o_vkCmdSetEvent2KHR, hk_vkCmdSetEvent2KHR);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetEvent2KHR, hk_vkCmdSetEvent2KHR);
 
         if (o_vkCmdResetEvent2KHR)
-            DetourAttach(&(PVOID&) o_vkCmdResetEvent2KHR, hk_vkCmdResetEvent2KHR);
+            HookBackend::Attach(&(PVOID&) o_vkCmdResetEvent2KHR, hk_vkCmdResetEvent2KHR);
 
         if (o_vkCmdWaitEvents2KHR)
-            DetourAttach(&(PVOID&) o_vkCmdWaitEvents2KHR, hk_vkCmdWaitEvents2KHR);
+            HookBackend::Attach(&(PVOID&) o_vkCmdWaitEvents2KHR, hk_vkCmdWaitEvents2KHR);
 
         if (o_vkCmdPipelineBarrier2KHR)
-            DetourAttach(&(PVOID&) o_vkCmdPipelineBarrier2KHR, hk_vkCmdPipelineBarrier2KHR);
+            HookBackend::Attach(&(PVOID&) o_vkCmdPipelineBarrier2KHR, hk_vkCmdPipelineBarrier2KHR);
 
         if (o_vkCmdWriteTimestamp2KHR)
-            DetourAttach(&(PVOID&) o_vkCmdWriteTimestamp2KHR, hk_vkCmdWriteTimestamp2KHR);
+            HookBackend::Attach(&(PVOID&) o_vkCmdWriteTimestamp2KHR, hk_vkCmdWriteTimestamp2KHR);
 
         if (o_vkCmdCopyBuffer2KHR)
-            DetourAttach(&(PVOID&) o_vkCmdCopyBuffer2KHR, hk_vkCmdCopyBuffer2KHR);
+            HookBackend::Attach(&(PVOID&) o_vkCmdCopyBuffer2KHR, hk_vkCmdCopyBuffer2KHR);
 
         if (o_vkCmdCopyImage2KHR)
-            DetourAttach(&(PVOID&) o_vkCmdCopyImage2KHR, hk_vkCmdCopyImage2KHR);
+            HookBackend::Attach(&(PVOID&) o_vkCmdCopyImage2KHR, hk_vkCmdCopyImage2KHR);
 
         if (o_vkCmdCopyBufferToImage2KHR)
-            DetourAttach(&(PVOID&) o_vkCmdCopyBufferToImage2KHR, hk_vkCmdCopyBufferToImage2KHR);
+            HookBackend::Attach(&(PVOID&) o_vkCmdCopyBufferToImage2KHR, hk_vkCmdCopyBufferToImage2KHR);
 
         if (o_vkCmdCopyImageToBuffer2KHR)
-            DetourAttach(&(PVOID&) o_vkCmdCopyImageToBuffer2KHR, hk_vkCmdCopyImageToBuffer2KHR);
+            HookBackend::Attach(&(PVOID&) o_vkCmdCopyImageToBuffer2KHR, hk_vkCmdCopyImageToBuffer2KHR);
 
         if (o_vkCmdBlitImage2KHR)
-            DetourAttach(&(PVOID&) o_vkCmdBlitImage2KHR, hk_vkCmdBlitImage2KHR);
+            HookBackend::Attach(&(PVOID&) o_vkCmdBlitImage2KHR, hk_vkCmdBlitImage2KHR);
 
         if (o_vkCmdResolveImage2KHR)
-            DetourAttach(&(PVOID&) o_vkCmdResolveImage2KHR, hk_vkCmdResolveImage2KHR);
+            HookBackend::Attach(&(PVOID&) o_vkCmdResolveImage2KHR, hk_vkCmdResolveImage2KHR);
 
         if (o_vkCmdTraceRaysIndirect2KHR)
-            DetourAttach(&(PVOID&) o_vkCmdTraceRaysIndirect2KHR, hk_vkCmdTraceRaysIndirect2KHR);
+            HookBackend::Attach(&(PVOID&) o_vkCmdTraceRaysIndirect2KHR, hk_vkCmdTraceRaysIndirect2KHR);
 
         if (o_vkCmdBindIndexBuffer2KHR)
-            DetourAttach(&(PVOID&) o_vkCmdBindIndexBuffer2KHR, hk_vkCmdBindIndexBuffer2KHR);
+            HookBackend::Attach(&(PVOID&) o_vkCmdBindIndexBuffer2KHR, hk_vkCmdBindIndexBuffer2KHR);
 
         if (o_vkCmdSetLineStippleKHR)
-            DetourAttach(&(PVOID&) o_vkCmdSetLineStippleKHR, hk_vkCmdSetLineStippleKHR);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetLineStippleKHR, hk_vkCmdSetLineStippleKHR);
 
         if (o_vkCmdBindDescriptorSets2KHR)
-            DetourAttach(&(PVOID&) o_vkCmdBindDescriptorSets2KHR, hk_vkCmdBindDescriptorSets2KHR);
+            HookBackend::Attach(&(PVOID&) o_vkCmdBindDescriptorSets2KHR, hk_vkCmdBindDescriptorSets2KHR);
 
         if (o_vkCmdPushConstants2KHR)
-            DetourAttach(&(PVOID&) o_vkCmdPushConstants2KHR, hk_vkCmdPushConstants2KHR);
+            HookBackend::Attach(&(PVOID&) o_vkCmdPushConstants2KHR, hk_vkCmdPushConstants2KHR);
 
         if (o_vkCmdPushDescriptorSet2KHR)
-            DetourAttach(&(PVOID&) o_vkCmdPushDescriptorSet2KHR, hk_vkCmdPushDescriptorSet2KHR);
+            HookBackend::Attach(&(PVOID&) o_vkCmdPushDescriptorSet2KHR, hk_vkCmdPushDescriptorSet2KHR);
 
         if (o_vkCmdPushDescriptorSetWithTemplate2KHR)
-            DetourAttach(&(PVOID&) o_vkCmdPushDescriptorSetWithTemplate2KHR, hk_vkCmdPushDescriptorSetWithTemplate2KHR);
+            HookBackend::Attach(&(PVOID&) o_vkCmdPushDescriptorSetWithTemplate2KHR, hk_vkCmdPushDescriptorSetWithTemplate2KHR);
 
         if (o_vkCmdSetDescriptorBufferOffsets2EXT)
-            DetourAttach(&(PVOID&) o_vkCmdSetDescriptorBufferOffsets2EXT, hk_vkCmdSetDescriptorBufferOffsets2EXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetDescriptorBufferOffsets2EXT, hk_vkCmdSetDescriptorBufferOffsets2EXT);
 
         if (o_vkCmdBindDescriptorBufferEmbeddedSamplers2EXT)
-            DetourAttach(&(PVOID&) o_vkCmdBindDescriptorBufferEmbeddedSamplers2EXT,
+            HookBackend::Attach(&(PVOID&) o_vkCmdBindDescriptorBufferEmbeddedSamplers2EXT,
                          hk_vkCmdBindDescriptorBufferEmbeddedSamplers2EXT);
 
         if (o_vkCmdDebugMarkerBeginEXT)
-            DetourAttach(&(PVOID&) o_vkCmdDebugMarkerBeginEXT, hk_vkCmdDebugMarkerBeginEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdDebugMarkerBeginEXT, hk_vkCmdDebugMarkerBeginEXT);
 
         if (o_vkCmdDebugMarkerEndEXT)
-            DetourAttach(&(PVOID&) o_vkCmdDebugMarkerEndEXT, hk_vkCmdDebugMarkerEndEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdDebugMarkerEndEXT, hk_vkCmdDebugMarkerEndEXT);
 
         if (o_vkCmdDebugMarkerInsertEXT)
-            DetourAttach(&(PVOID&) o_vkCmdDebugMarkerInsertEXT, hk_vkCmdDebugMarkerInsertEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdDebugMarkerInsertEXT, hk_vkCmdDebugMarkerInsertEXT);
 
         if (o_vkCmdBindTransformFeedbackBuffersEXT)
-            DetourAttach(&(PVOID&) o_vkCmdBindTransformFeedbackBuffersEXT, hk_vkCmdBindTransformFeedbackBuffersEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdBindTransformFeedbackBuffersEXT, hk_vkCmdBindTransformFeedbackBuffersEXT);
 
         if (o_vkCmdBeginTransformFeedbackEXT)
-            DetourAttach(&(PVOID&) o_vkCmdBeginTransformFeedbackEXT, hk_vkCmdBeginTransformFeedbackEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdBeginTransformFeedbackEXT, hk_vkCmdBeginTransformFeedbackEXT);
 
         if (o_vkCmdEndTransformFeedbackEXT)
-            DetourAttach(&(PVOID&) o_vkCmdEndTransformFeedbackEXT, hk_vkCmdEndTransformFeedbackEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdEndTransformFeedbackEXT, hk_vkCmdEndTransformFeedbackEXT);
 
         if (o_vkCmdBeginQueryIndexedEXT)
-            DetourAttach(&(PVOID&) o_vkCmdBeginQueryIndexedEXT, hk_vkCmdBeginQueryIndexedEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdBeginQueryIndexedEXT, hk_vkCmdBeginQueryIndexedEXT);
 
         if (o_vkCmdEndQueryIndexedEXT)
-            DetourAttach(&(PVOID&) o_vkCmdEndQueryIndexedEXT, hk_vkCmdEndQueryIndexedEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdEndQueryIndexedEXT, hk_vkCmdEndQueryIndexedEXT);
 
         if (o_vkCmdDrawIndirectByteCountEXT)
-            DetourAttach(&(PVOID&) o_vkCmdDrawIndirectByteCountEXT, hk_vkCmdDrawIndirectByteCountEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdDrawIndirectByteCountEXT, hk_vkCmdDrawIndirectByteCountEXT);
 
         if (o_vkCmdCuLaunchKernelNVX)
-            DetourAttach(&(PVOID&) o_vkCmdCuLaunchKernelNVX, hk_vkCmdCuLaunchKernelNVX);
+            HookBackend::Attach(&(PVOID&) o_vkCmdCuLaunchKernelNVX, hk_vkCmdCuLaunchKernelNVX);
 
         if (o_vkCmdDrawIndirectCountAMD)
-            DetourAttach(&(PVOID&) o_vkCmdDrawIndirectCountAMD, hk_vkCmdDrawIndirectCountAMD);
+            HookBackend::Attach(&(PVOID&) o_vkCmdDrawIndirectCountAMD, hk_vkCmdDrawIndirectCountAMD);
 
         if (o_vkCmdDrawIndexedIndirectCountAMD)
-            DetourAttach(&(PVOID&) o_vkCmdDrawIndexedIndirectCountAMD, hk_vkCmdDrawIndexedIndirectCountAMD);
+            HookBackend::Attach(&(PVOID&) o_vkCmdDrawIndexedIndirectCountAMD, hk_vkCmdDrawIndexedIndirectCountAMD);
 
         if (o_vkCmdBeginConditionalRenderingEXT)
-            DetourAttach(&(PVOID&) o_vkCmdBeginConditionalRenderingEXT, hk_vkCmdBeginConditionalRenderingEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdBeginConditionalRenderingEXT, hk_vkCmdBeginConditionalRenderingEXT);
 
         if (o_vkCmdEndConditionalRenderingEXT)
-            DetourAttach(&(PVOID&) o_vkCmdEndConditionalRenderingEXT, hk_vkCmdEndConditionalRenderingEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdEndConditionalRenderingEXT, hk_vkCmdEndConditionalRenderingEXT);
 
         if (o_vkCmdSetViewportWScalingNV)
-            DetourAttach(&(PVOID&) o_vkCmdSetViewportWScalingNV, hk_vkCmdSetViewportWScalingNV);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetViewportWScalingNV, hk_vkCmdSetViewportWScalingNV);
 
         if (o_vkCmdSetDiscardRectangleEXT)
-            DetourAttach(&(PVOID&) o_vkCmdSetDiscardRectangleEXT, hk_vkCmdSetDiscardRectangleEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetDiscardRectangleEXT, hk_vkCmdSetDiscardRectangleEXT);
 
         if (o_vkCmdSetDiscardRectangleEnableEXT)
-            DetourAttach(&(PVOID&) o_vkCmdSetDiscardRectangleEnableEXT, hk_vkCmdSetDiscardRectangleEnableEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetDiscardRectangleEnableEXT, hk_vkCmdSetDiscardRectangleEnableEXT);
 
         if (o_vkCmdSetDiscardRectangleModeEXT)
-            DetourAttach(&(PVOID&) o_vkCmdSetDiscardRectangleModeEXT, hk_vkCmdSetDiscardRectangleModeEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetDiscardRectangleModeEXT, hk_vkCmdSetDiscardRectangleModeEXT);
 
         if (o_vkCmdBeginDebugUtilsLabelEXT)
-            DetourAttach(&(PVOID&) o_vkCmdBeginDebugUtilsLabelEXT, hk_vkCmdBeginDebugUtilsLabelEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdBeginDebugUtilsLabelEXT, hk_vkCmdBeginDebugUtilsLabelEXT);
 
         if (o_vkCmdEndDebugUtilsLabelEXT)
-            DetourAttach(&(PVOID&) o_vkCmdEndDebugUtilsLabelEXT, hk_vkCmdEndDebugUtilsLabelEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdEndDebugUtilsLabelEXT, hk_vkCmdEndDebugUtilsLabelEXT);
 
         if (o_vkCmdInsertDebugUtilsLabelEXT)
-            DetourAttach(&(PVOID&) o_vkCmdInsertDebugUtilsLabelEXT, hk_vkCmdInsertDebugUtilsLabelEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdInsertDebugUtilsLabelEXT, hk_vkCmdInsertDebugUtilsLabelEXT);
 
         if (o_vkCmdSetSampleLocationsEXT)
-            DetourAttach(&(PVOID&) o_vkCmdSetSampleLocationsEXT, hk_vkCmdSetSampleLocationsEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetSampleLocationsEXT, hk_vkCmdSetSampleLocationsEXT);
 
         if (o_vkCmdBindShadingRateImageNV)
-            DetourAttach(&(PVOID&) o_vkCmdBindShadingRateImageNV, hk_vkCmdBindShadingRateImageNV);
+            HookBackend::Attach(&(PVOID&) o_vkCmdBindShadingRateImageNV, hk_vkCmdBindShadingRateImageNV);
 
         if (o_vkCmdSetViewportShadingRatePaletteNV)
-            DetourAttach(&(PVOID&) o_vkCmdSetViewportShadingRatePaletteNV, hk_vkCmdSetViewportShadingRatePaletteNV);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetViewportShadingRatePaletteNV, hk_vkCmdSetViewportShadingRatePaletteNV);
 
         if (o_vkCmdSetCoarseSampleOrderNV)
-            DetourAttach(&(PVOID&) o_vkCmdSetCoarseSampleOrderNV, hk_vkCmdSetCoarseSampleOrderNV);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetCoarseSampleOrderNV, hk_vkCmdSetCoarseSampleOrderNV);
 
         if (o_vkCmdBuildAccelerationStructureNV)
-            DetourAttach(&(PVOID&) o_vkCmdBuildAccelerationStructureNV, hk_vkCmdBuildAccelerationStructureNV);
+            HookBackend::Attach(&(PVOID&) o_vkCmdBuildAccelerationStructureNV, hk_vkCmdBuildAccelerationStructureNV);
 
         if (o_vkCmdCopyAccelerationStructureNV)
-            DetourAttach(&(PVOID&) o_vkCmdCopyAccelerationStructureNV, hk_vkCmdCopyAccelerationStructureNV);
+            HookBackend::Attach(&(PVOID&) o_vkCmdCopyAccelerationStructureNV, hk_vkCmdCopyAccelerationStructureNV);
 
         if (o_vkCmdTraceRaysNV)
-            DetourAttach(&(PVOID&) o_vkCmdTraceRaysNV, hk_vkCmdTraceRaysNV);
+            HookBackend::Attach(&(PVOID&) o_vkCmdTraceRaysNV, hk_vkCmdTraceRaysNV);
 
         if (o_vkCmdWriteAccelerationStructuresPropertiesNV)
-            DetourAttach(&(PVOID&) o_vkCmdWriteAccelerationStructuresPropertiesNV,
+            HookBackend::Attach(&(PVOID&) o_vkCmdWriteAccelerationStructuresPropertiesNV,
                          hk_vkCmdWriteAccelerationStructuresPropertiesNV);
 
         if (o_vkCmdWriteBufferMarkerAMD)
-            DetourAttach(&(PVOID&) o_vkCmdWriteBufferMarkerAMD, hk_vkCmdWriteBufferMarkerAMD);
+            HookBackend::Attach(&(PVOID&) o_vkCmdWriteBufferMarkerAMD, hk_vkCmdWriteBufferMarkerAMD);
 
         if (o_vkCmdWriteBufferMarker2AMD)
-            DetourAttach(&(PVOID&) o_vkCmdWriteBufferMarker2AMD, hk_vkCmdWriteBufferMarker2AMD);
+            HookBackend::Attach(&(PVOID&) o_vkCmdWriteBufferMarker2AMD, hk_vkCmdWriteBufferMarker2AMD);
 
         if (o_vkCmdDrawMeshTasksNV)
-            DetourAttach(&(PVOID&) o_vkCmdDrawMeshTasksNV, hk_vkCmdDrawMeshTasksNV);
+            HookBackend::Attach(&(PVOID&) o_vkCmdDrawMeshTasksNV, hk_vkCmdDrawMeshTasksNV);
 
         if (o_vkCmdDrawMeshTasksIndirectNV)
-            DetourAttach(&(PVOID&) o_vkCmdDrawMeshTasksIndirectNV, hk_vkCmdDrawMeshTasksIndirectNV);
+            HookBackend::Attach(&(PVOID&) o_vkCmdDrawMeshTasksIndirectNV, hk_vkCmdDrawMeshTasksIndirectNV);
 
         if (o_vkCmdDrawMeshTasksIndirectCountNV)
-            DetourAttach(&(PVOID&) o_vkCmdDrawMeshTasksIndirectCountNV, hk_vkCmdDrawMeshTasksIndirectCountNV);
+            HookBackend::Attach(&(PVOID&) o_vkCmdDrawMeshTasksIndirectCountNV, hk_vkCmdDrawMeshTasksIndirectCountNV);
 
         if (o_vkCmdSetExclusiveScissorEnableNV)
-            DetourAttach(&(PVOID&) o_vkCmdSetExclusiveScissorEnableNV, hk_vkCmdSetExclusiveScissorEnableNV);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetExclusiveScissorEnableNV, hk_vkCmdSetExclusiveScissorEnableNV);
 
         if (o_vkCmdSetExclusiveScissorNV)
-            DetourAttach(&(PVOID&) o_vkCmdSetExclusiveScissorNV, hk_vkCmdSetExclusiveScissorNV);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetExclusiveScissorNV, hk_vkCmdSetExclusiveScissorNV);
 
         if (o_vkCmdSetCheckpointNV)
-            DetourAttach(&(PVOID&) o_vkCmdSetCheckpointNV, hk_vkCmdSetCheckpointNV);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetCheckpointNV, hk_vkCmdSetCheckpointNV);
 
         if (o_vkCmdSetPerformanceMarkerINTEL)
-            DetourAttach(&(PVOID&) o_vkCmdSetPerformanceMarkerINTEL, hk_vkCmdSetPerformanceMarkerINTEL);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetPerformanceMarkerINTEL, hk_vkCmdSetPerformanceMarkerINTEL);
 
         if (o_vkCmdSetPerformanceStreamMarkerINTEL)
-            DetourAttach(&(PVOID&) o_vkCmdSetPerformanceStreamMarkerINTEL, hk_vkCmdSetPerformanceStreamMarkerINTEL);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetPerformanceStreamMarkerINTEL, hk_vkCmdSetPerformanceStreamMarkerINTEL);
 
         if (o_vkCmdSetPerformanceOverrideINTEL)
-            DetourAttach(&(PVOID&) o_vkCmdSetPerformanceOverrideINTEL, hk_vkCmdSetPerformanceOverrideINTEL);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetPerformanceOverrideINTEL, hk_vkCmdSetPerformanceOverrideINTEL);
 
         if (o_vkCmdSetLineStippleEXT)
-            DetourAttach(&(PVOID&) o_vkCmdSetLineStippleEXT, hk_vkCmdSetLineStippleEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetLineStippleEXT, hk_vkCmdSetLineStippleEXT);
 
         if (o_vkCmdSetCullModeEXT)
-            DetourAttach(&(PVOID&) o_vkCmdSetCullModeEXT, hk_vkCmdSetCullModeEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetCullModeEXT, hk_vkCmdSetCullModeEXT);
 
         if (o_vkCmdSetFrontFaceEXT)
-            DetourAttach(&(PVOID&) o_vkCmdSetFrontFaceEXT, hk_vkCmdSetFrontFaceEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetFrontFaceEXT, hk_vkCmdSetFrontFaceEXT);
 
         if (o_vkCmdSetPrimitiveTopologyEXT)
-            DetourAttach(&(PVOID&) o_vkCmdSetPrimitiveTopologyEXT, hk_vkCmdSetPrimitiveTopologyEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetPrimitiveTopologyEXT, hk_vkCmdSetPrimitiveTopologyEXT);
 
         if (o_vkCmdSetViewportWithCountEXT)
-            DetourAttach(&(PVOID&) o_vkCmdSetViewportWithCountEXT, hk_vkCmdSetViewportWithCountEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetViewportWithCountEXT, hk_vkCmdSetViewportWithCountEXT);
 
         if (o_vkCmdSetScissorWithCountEXT)
-            DetourAttach(&(PVOID&) o_vkCmdSetScissorWithCountEXT, hk_vkCmdSetScissorWithCountEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetScissorWithCountEXT, hk_vkCmdSetScissorWithCountEXT);
 
         if (o_vkCmdBindVertexBuffers2EXT)
-            DetourAttach(&(PVOID&) o_vkCmdBindVertexBuffers2EXT, hk_vkCmdBindVertexBuffers2EXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdBindVertexBuffers2EXT, hk_vkCmdBindVertexBuffers2EXT);
 
         if (o_vkCmdSetDepthTestEnableEXT)
-            DetourAttach(&(PVOID&) o_vkCmdSetDepthTestEnableEXT, hk_vkCmdSetDepthTestEnableEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetDepthTestEnableEXT, hk_vkCmdSetDepthTestEnableEXT);
 
         if (o_vkCmdSetDepthWriteEnableEXT)
-            DetourAttach(&(PVOID&) o_vkCmdSetDepthWriteEnableEXT, hk_vkCmdSetDepthWriteEnableEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetDepthWriteEnableEXT, hk_vkCmdSetDepthWriteEnableEXT);
 
         if (o_vkCmdSetDepthCompareOpEXT)
-            DetourAttach(&(PVOID&) o_vkCmdSetDepthCompareOpEXT, hk_vkCmdSetDepthCompareOpEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetDepthCompareOpEXT, hk_vkCmdSetDepthCompareOpEXT);
 
         if (o_vkCmdSetDepthBoundsTestEnableEXT)
-            DetourAttach(&(PVOID&) o_vkCmdSetDepthBoundsTestEnableEXT, hk_vkCmdSetDepthBoundsTestEnableEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetDepthBoundsTestEnableEXT, hk_vkCmdSetDepthBoundsTestEnableEXT);
 
         if (o_vkCmdSetStencilTestEnableEXT)
-            DetourAttach(&(PVOID&) o_vkCmdSetStencilTestEnableEXT, hk_vkCmdSetStencilTestEnableEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetStencilTestEnableEXT, hk_vkCmdSetStencilTestEnableEXT);
 
         if (o_vkCmdSetStencilOpEXT)
-            DetourAttach(&(PVOID&) o_vkCmdSetStencilOpEXT, hk_vkCmdSetStencilOpEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetStencilOpEXT, hk_vkCmdSetStencilOpEXT);
 
         if (o_vkCmdPreprocessGeneratedCommandsNV)
-            DetourAttach(&(PVOID&) o_vkCmdPreprocessGeneratedCommandsNV, hk_vkCmdPreprocessGeneratedCommandsNV);
+            HookBackend::Attach(&(PVOID&) o_vkCmdPreprocessGeneratedCommandsNV, hk_vkCmdPreprocessGeneratedCommandsNV);
 
         if (o_vkCmdExecuteGeneratedCommandsNV)
-            DetourAttach(&(PVOID&) o_vkCmdExecuteGeneratedCommandsNV, hk_vkCmdExecuteGeneratedCommandsNV);
+            HookBackend::Attach(&(PVOID&) o_vkCmdExecuteGeneratedCommandsNV, hk_vkCmdExecuteGeneratedCommandsNV);
 
         if (o_vkCmdBindPipelineShaderGroupNV)
-            DetourAttach(&(PVOID&) o_vkCmdBindPipelineShaderGroupNV, hk_vkCmdBindPipelineShaderGroupNV);
+            HookBackend::Attach(&(PVOID&) o_vkCmdBindPipelineShaderGroupNV, hk_vkCmdBindPipelineShaderGroupNV);
 
         if (o_vkCmdSetDepthBias2EXT)
-            DetourAttach(&(PVOID&) o_vkCmdSetDepthBias2EXT, hk_vkCmdSetDepthBias2EXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetDepthBias2EXT, hk_vkCmdSetDepthBias2EXT);
 
         if (o_vkCmdCudaLaunchKernelNV)
-            DetourAttach(&(PVOID&) o_vkCmdCudaLaunchKernelNV, hk_vkCmdCudaLaunchKernelNV);
+            HookBackend::Attach(&(PVOID&) o_vkCmdCudaLaunchKernelNV, hk_vkCmdCudaLaunchKernelNV);
 
         if (o_vkCmdBindDescriptorBuffersEXT)
-            DetourAttach(&(PVOID&) o_vkCmdBindDescriptorBuffersEXT, hk_vkCmdBindDescriptorBuffersEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdBindDescriptorBuffersEXT, hk_vkCmdBindDescriptorBuffersEXT);
 
         if (o_vkCmdSetDescriptorBufferOffsetsEXT)
-            DetourAttach(&(PVOID&) o_vkCmdSetDescriptorBufferOffsetsEXT, hk_vkCmdSetDescriptorBufferOffsetsEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetDescriptorBufferOffsetsEXT, hk_vkCmdSetDescriptorBufferOffsetsEXT);
 
         if (o_vkCmdBindDescriptorBufferEmbeddedSamplersEXT)
-            DetourAttach(&(PVOID&) o_vkCmdBindDescriptorBufferEmbeddedSamplersEXT,
+            HookBackend::Attach(&(PVOID&) o_vkCmdBindDescriptorBufferEmbeddedSamplersEXT,
                          hk_vkCmdBindDescriptorBufferEmbeddedSamplersEXT);
 
         if (o_vkCmdSetFragmentShadingRateEnumNV)
-            DetourAttach(&(PVOID&) o_vkCmdSetFragmentShadingRateEnumNV, hk_vkCmdSetFragmentShadingRateEnumNV);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetFragmentShadingRateEnumNV, hk_vkCmdSetFragmentShadingRateEnumNV);
 
         if (o_vkCmdSetVertexInputEXT)
-            DetourAttach(&(PVOID&) o_vkCmdSetVertexInputEXT, hk_vkCmdSetVertexInputEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetVertexInputEXT, hk_vkCmdSetVertexInputEXT);
 
         if (o_vkCmdSubpassShadingHUAWEI)
-            DetourAttach(&(PVOID&) o_vkCmdSubpassShadingHUAWEI, hk_vkCmdSubpassShadingHUAWEI);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSubpassShadingHUAWEI, hk_vkCmdSubpassShadingHUAWEI);
 
         if (o_vkCmdBindInvocationMaskHUAWEI)
-            DetourAttach(&(PVOID&) o_vkCmdBindInvocationMaskHUAWEI, hk_vkCmdBindInvocationMaskHUAWEI);
+            HookBackend::Attach(&(PVOID&) o_vkCmdBindInvocationMaskHUAWEI, hk_vkCmdBindInvocationMaskHUAWEI);
 
         if (o_vkCmdSetPatchControlPointsEXT)
-            DetourAttach(&(PVOID&) o_vkCmdSetPatchControlPointsEXT, hk_vkCmdSetPatchControlPointsEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetPatchControlPointsEXT, hk_vkCmdSetPatchControlPointsEXT);
 
         if (o_vkCmdSetRasterizerDiscardEnableEXT)
-            DetourAttach(&(PVOID&) o_vkCmdSetRasterizerDiscardEnableEXT, hk_vkCmdSetRasterizerDiscardEnableEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetRasterizerDiscardEnableEXT, hk_vkCmdSetRasterizerDiscardEnableEXT);
 
         if (o_vkCmdSetDepthBiasEnableEXT)
-            DetourAttach(&(PVOID&) o_vkCmdSetDepthBiasEnableEXT, hk_vkCmdSetDepthBiasEnableEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetDepthBiasEnableEXT, hk_vkCmdSetDepthBiasEnableEXT);
 
         if (o_vkCmdSetLogicOpEXT)
-            DetourAttach(&(PVOID&) o_vkCmdSetLogicOpEXT, hk_vkCmdSetLogicOpEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetLogicOpEXT, hk_vkCmdSetLogicOpEXT);
 
         if (o_vkCmdSetPrimitiveRestartEnableEXT)
-            DetourAttach(&(PVOID&) o_vkCmdSetPrimitiveRestartEnableEXT, hk_vkCmdSetPrimitiveRestartEnableEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetPrimitiveRestartEnableEXT, hk_vkCmdSetPrimitiveRestartEnableEXT);
 
         if (o_vkCmdSetColorWriteEnableEXT)
-            DetourAttach(&(PVOID&) o_vkCmdSetColorWriteEnableEXT, hk_vkCmdSetColorWriteEnableEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetColorWriteEnableEXT, hk_vkCmdSetColorWriteEnableEXT);
 
         if (o_vkCmdDrawMultiEXT)
-            DetourAttach(&(PVOID&) o_vkCmdDrawMultiEXT, hk_vkCmdDrawMultiEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdDrawMultiEXT, hk_vkCmdDrawMultiEXT);
 
         if (o_vkCmdDrawMultiIndexedEXT)
-            DetourAttach(&(PVOID&) o_vkCmdDrawMultiIndexedEXT, hk_vkCmdDrawMultiIndexedEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdDrawMultiIndexedEXT, hk_vkCmdDrawMultiIndexedEXT);
 
         if (o_vkCmdBuildMicromapsEXT)
-            DetourAttach(&(PVOID&) o_vkCmdBuildMicromapsEXT, hk_vkCmdBuildMicromapsEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdBuildMicromapsEXT, hk_vkCmdBuildMicromapsEXT);
 
         if (o_vkCmdCopyMicromapEXT)
-            DetourAttach(&(PVOID&) o_vkCmdCopyMicromapEXT, hk_vkCmdCopyMicromapEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdCopyMicromapEXT, hk_vkCmdCopyMicromapEXT);
 
         if (o_vkCmdCopyMicromapToMemoryEXT)
-            DetourAttach(&(PVOID&) o_vkCmdCopyMicromapToMemoryEXT, hk_vkCmdCopyMicromapToMemoryEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdCopyMicromapToMemoryEXT, hk_vkCmdCopyMicromapToMemoryEXT);
 
         if (o_vkCmdCopyMemoryToMicromapEXT)
-            DetourAttach(&(PVOID&) o_vkCmdCopyMemoryToMicromapEXT, hk_vkCmdCopyMemoryToMicromapEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdCopyMemoryToMicromapEXT, hk_vkCmdCopyMemoryToMicromapEXT);
 
         if (o_vkCmdWriteMicromapsPropertiesEXT)
-            DetourAttach(&(PVOID&) o_vkCmdWriteMicromapsPropertiesEXT, hk_vkCmdWriteMicromapsPropertiesEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdWriteMicromapsPropertiesEXT, hk_vkCmdWriteMicromapsPropertiesEXT);
 
         if (o_vkCmdDrawClusterHUAWEI)
-            DetourAttach(&(PVOID&) o_vkCmdDrawClusterHUAWEI, hk_vkCmdDrawClusterHUAWEI);
+            HookBackend::Attach(&(PVOID&) o_vkCmdDrawClusterHUAWEI, hk_vkCmdDrawClusterHUAWEI);
 
         if (o_vkCmdDrawClusterIndirectHUAWEI)
-            DetourAttach(&(PVOID&) o_vkCmdDrawClusterIndirectHUAWEI, hk_vkCmdDrawClusterIndirectHUAWEI);
+            HookBackend::Attach(&(PVOID&) o_vkCmdDrawClusterIndirectHUAWEI, hk_vkCmdDrawClusterIndirectHUAWEI);
 
         if (o_vkCmdCopyMemoryIndirectNV)
-            DetourAttach(&(PVOID&) o_vkCmdCopyMemoryIndirectNV, hk_vkCmdCopyMemoryIndirectNV);
+            HookBackend::Attach(&(PVOID&) o_vkCmdCopyMemoryIndirectNV, hk_vkCmdCopyMemoryIndirectNV);
 
         if (o_vkCmdCopyMemoryToImageIndirectNV)
-            DetourAttach(&(PVOID&) o_vkCmdCopyMemoryToImageIndirectNV, hk_vkCmdCopyMemoryToImageIndirectNV);
+            HookBackend::Attach(&(PVOID&) o_vkCmdCopyMemoryToImageIndirectNV, hk_vkCmdCopyMemoryToImageIndirectNV);
 
         if (o_vkCmdDecompressMemoryNV)
-            DetourAttach(&(PVOID&) o_vkCmdDecompressMemoryNV, hk_vkCmdDecompressMemoryNV);
+            HookBackend::Attach(&(PVOID&) o_vkCmdDecompressMemoryNV, hk_vkCmdDecompressMemoryNV);
 
         if (o_vkCmdDecompressMemoryIndirectCountNV)
-            DetourAttach(&(PVOID&) o_vkCmdDecompressMemoryIndirectCountNV, hk_vkCmdDecompressMemoryIndirectCountNV);
+            HookBackend::Attach(&(PVOID&) o_vkCmdDecompressMemoryIndirectCountNV, hk_vkCmdDecompressMemoryIndirectCountNV);
 
         if (o_vkCmdUpdatePipelineIndirectBufferNV)
-            DetourAttach(&(PVOID&) o_vkCmdUpdatePipelineIndirectBufferNV, hk_vkCmdUpdatePipelineIndirectBufferNV);
+            HookBackend::Attach(&(PVOID&) o_vkCmdUpdatePipelineIndirectBufferNV, hk_vkCmdUpdatePipelineIndirectBufferNV);
 
         if (o_vkCmdSetDepthClampEnableEXT)
-            DetourAttach(&(PVOID&) o_vkCmdSetDepthClampEnableEXT, hk_vkCmdSetDepthClampEnableEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetDepthClampEnableEXT, hk_vkCmdSetDepthClampEnableEXT);
 
         if (o_vkCmdSetPolygonModeEXT)
-            DetourAttach(&(PVOID&) o_vkCmdSetPolygonModeEXT, hk_vkCmdSetPolygonModeEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetPolygonModeEXT, hk_vkCmdSetPolygonModeEXT);
 
         if (o_vkCmdSetRasterizationSamplesEXT)
-            DetourAttach(&(PVOID&) o_vkCmdSetRasterizationSamplesEXT, hk_vkCmdSetRasterizationSamplesEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetRasterizationSamplesEXT, hk_vkCmdSetRasterizationSamplesEXT);
 
         if (o_vkCmdSetSampleMaskEXT)
-            DetourAttach(&(PVOID&) o_vkCmdSetSampleMaskEXT, hk_vkCmdSetSampleMaskEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetSampleMaskEXT, hk_vkCmdSetSampleMaskEXT);
 
         if (o_vkCmdSetAlphaToCoverageEnableEXT)
-            DetourAttach(&(PVOID&) o_vkCmdSetAlphaToCoverageEnableEXT, hk_vkCmdSetAlphaToCoverageEnableEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetAlphaToCoverageEnableEXT, hk_vkCmdSetAlphaToCoverageEnableEXT);
 
         if (o_vkCmdSetAlphaToOneEnableEXT)
-            DetourAttach(&(PVOID&) o_vkCmdSetAlphaToOneEnableEXT, hk_vkCmdSetAlphaToOneEnableEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetAlphaToOneEnableEXT, hk_vkCmdSetAlphaToOneEnableEXT);
 
         if (o_vkCmdSetLogicOpEnableEXT)
-            DetourAttach(&(PVOID&) o_vkCmdSetLogicOpEnableEXT, hk_vkCmdSetLogicOpEnableEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetLogicOpEnableEXT, hk_vkCmdSetLogicOpEnableEXT);
 
         if (o_vkCmdSetColorBlendEnableEXT)
-            DetourAttach(&(PVOID&) o_vkCmdSetColorBlendEnableEXT, hk_vkCmdSetColorBlendEnableEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetColorBlendEnableEXT, hk_vkCmdSetColorBlendEnableEXT);
 
         if (o_vkCmdSetColorBlendEquationEXT)
-            DetourAttach(&(PVOID&) o_vkCmdSetColorBlendEquationEXT, hk_vkCmdSetColorBlendEquationEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetColorBlendEquationEXT, hk_vkCmdSetColorBlendEquationEXT);
 
         if (o_vkCmdSetColorWriteMaskEXT)
-            DetourAttach(&(PVOID&) o_vkCmdSetColorWriteMaskEXT, hk_vkCmdSetColorWriteMaskEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetColorWriteMaskEXT, hk_vkCmdSetColorWriteMaskEXT);
 
         if (o_vkCmdSetTessellationDomainOriginEXT)
-            DetourAttach(&(PVOID&) o_vkCmdSetTessellationDomainOriginEXT, hk_vkCmdSetTessellationDomainOriginEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetTessellationDomainOriginEXT, hk_vkCmdSetTessellationDomainOriginEXT);
 
         if (o_vkCmdSetRasterizationStreamEXT)
-            DetourAttach(&(PVOID&) o_vkCmdSetRasterizationStreamEXT, hk_vkCmdSetRasterizationStreamEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetRasterizationStreamEXT, hk_vkCmdSetRasterizationStreamEXT);
 
         if (o_vkCmdSetConservativeRasterizationModeEXT)
-            DetourAttach(&(PVOID&) o_vkCmdSetConservativeRasterizationModeEXT,
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetConservativeRasterizationModeEXT,
                          hk_vkCmdSetConservativeRasterizationModeEXT);
 
         if (o_vkCmdSetExtraPrimitiveOverestimationSizeEXT)
-            DetourAttach(&(PVOID&) o_vkCmdSetExtraPrimitiveOverestimationSizeEXT,
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetExtraPrimitiveOverestimationSizeEXT,
                          hk_vkCmdSetExtraPrimitiveOverestimationSizeEXT);
 
         if (o_vkCmdSetDepthClipEnableEXT)
-            DetourAttach(&(PVOID&) o_vkCmdSetDepthClipEnableEXT, hk_vkCmdSetDepthClipEnableEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetDepthClipEnableEXT, hk_vkCmdSetDepthClipEnableEXT);
 
         if (o_vkCmdSetSampleLocationsEnableEXT)
-            DetourAttach(&(PVOID&) o_vkCmdSetSampleLocationsEnableEXT, hk_vkCmdSetSampleLocationsEnableEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetSampleLocationsEnableEXT, hk_vkCmdSetSampleLocationsEnableEXT);
 
         if (o_vkCmdSetColorBlendAdvancedEXT)
-            DetourAttach(&(PVOID&) o_vkCmdSetColorBlendAdvancedEXT, hk_vkCmdSetColorBlendAdvancedEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetColorBlendAdvancedEXT, hk_vkCmdSetColorBlendAdvancedEXT);
 
         if (o_vkCmdSetProvokingVertexModeEXT)
-            DetourAttach(&(PVOID&) o_vkCmdSetProvokingVertexModeEXT, hk_vkCmdSetProvokingVertexModeEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetProvokingVertexModeEXT, hk_vkCmdSetProvokingVertexModeEXT);
 
         if (o_vkCmdSetLineRasterizationModeEXT)
-            DetourAttach(&(PVOID&) o_vkCmdSetLineRasterizationModeEXT, hk_vkCmdSetLineRasterizationModeEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetLineRasterizationModeEXT, hk_vkCmdSetLineRasterizationModeEXT);
 
         if (o_vkCmdSetLineStippleEnableEXT)
-            DetourAttach(&(PVOID&) o_vkCmdSetLineStippleEnableEXT, hk_vkCmdSetLineStippleEnableEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetLineStippleEnableEXT, hk_vkCmdSetLineStippleEnableEXT);
 
         if (o_vkCmdSetDepthClipNegativeOneToOneEXT)
-            DetourAttach(&(PVOID&) o_vkCmdSetDepthClipNegativeOneToOneEXT, hk_vkCmdSetDepthClipNegativeOneToOneEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetDepthClipNegativeOneToOneEXT, hk_vkCmdSetDepthClipNegativeOneToOneEXT);
 
         if (o_vkCmdSetViewportWScalingEnableNV)
-            DetourAttach(&(PVOID&) o_vkCmdSetViewportWScalingEnableNV, hk_vkCmdSetViewportWScalingEnableNV);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetViewportWScalingEnableNV, hk_vkCmdSetViewportWScalingEnableNV);
 
         if (o_vkCmdSetViewportSwizzleNV)
-            DetourAttach(&(PVOID&) o_vkCmdSetViewportSwizzleNV, hk_vkCmdSetViewportSwizzleNV);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetViewportSwizzleNV, hk_vkCmdSetViewportSwizzleNV);
 
         if (o_vkCmdSetCoverageToColorEnableNV)
-            DetourAttach(&(PVOID&) o_vkCmdSetCoverageToColorEnableNV, hk_vkCmdSetCoverageToColorEnableNV);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetCoverageToColorEnableNV, hk_vkCmdSetCoverageToColorEnableNV);
 
         if (o_vkCmdSetCoverageToColorLocationNV)
-            DetourAttach(&(PVOID&) o_vkCmdSetCoverageToColorLocationNV, hk_vkCmdSetCoverageToColorLocationNV);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetCoverageToColorLocationNV, hk_vkCmdSetCoverageToColorLocationNV);
 
         if (o_vkCmdSetCoverageModulationModeNV)
-            DetourAttach(&(PVOID&) o_vkCmdSetCoverageModulationModeNV, hk_vkCmdSetCoverageModulationModeNV);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetCoverageModulationModeNV, hk_vkCmdSetCoverageModulationModeNV);
 
         if (o_vkCmdSetCoverageModulationTableEnableNV)
-            DetourAttach(&(PVOID&) o_vkCmdSetCoverageModulationTableEnableNV,
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetCoverageModulationTableEnableNV,
                          hk_vkCmdSetCoverageModulationTableEnableNV);
 
         if (o_vkCmdSetCoverageModulationTableNV)
-            DetourAttach(&(PVOID&) o_vkCmdSetCoverageModulationTableNV, hk_vkCmdSetCoverageModulationTableNV);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetCoverageModulationTableNV, hk_vkCmdSetCoverageModulationTableNV);
 
         if (o_vkCmdSetShadingRateImageEnableNV)
-            DetourAttach(&(PVOID&) o_vkCmdSetShadingRateImageEnableNV, hk_vkCmdSetShadingRateImageEnableNV);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetShadingRateImageEnableNV, hk_vkCmdSetShadingRateImageEnableNV);
 
         if (o_vkCmdSetRepresentativeFragmentTestEnableNV)
-            DetourAttach(&(PVOID&) o_vkCmdSetRepresentativeFragmentTestEnableNV,
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetRepresentativeFragmentTestEnableNV,
                          hk_vkCmdSetRepresentativeFragmentTestEnableNV);
 
         if (o_vkCmdSetCoverageReductionModeNV)
-            DetourAttach(&(PVOID&) o_vkCmdSetCoverageReductionModeNV, hk_vkCmdSetCoverageReductionModeNV);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetCoverageReductionModeNV, hk_vkCmdSetCoverageReductionModeNV);
 
         if (o_vkCmdOpticalFlowExecuteNV)
-            DetourAttach(&(PVOID&) o_vkCmdOpticalFlowExecuteNV, hk_vkCmdOpticalFlowExecuteNV);
+            HookBackend::Attach(&(PVOID&) o_vkCmdOpticalFlowExecuteNV, hk_vkCmdOpticalFlowExecuteNV);
 
         if (o_vkCmdBindShadersEXT)
-            DetourAttach(&(PVOID&) o_vkCmdBindShadersEXT, hk_vkCmdBindShadersEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdBindShadersEXT, hk_vkCmdBindShadersEXT);
 
         if (o_vkCmdSetDepthClampRangeEXT)
-            DetourAttach(&(PVOID&) o_vkCmdSetDepthClampRangeEXT, hk_vkCmdSetDepthClampRangeEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetDepthClampRangeEXT, hk_vkCmdSetDepthClampRangeEXT);
 
         if (o_vkCmdConvertCooperativeVectorMatrixNV)
-            DetourAttach(&(PVOID&) o_vkCmdConvertCooperativeVectorMatrixNV, hk_vkCmdConvertCooperativeVectorMatrixNV);
+            HookBackend::Attach(&(PVOID&) o_vkCmdConvertCooperativeVectorMatrixNV, hk_vkCmdConvertCooperativeVectorMatrixNV);
 
         if (o_vkCmdSetAttachmentFeedbackLoopEnableEXT)
-            DetourAttach(&(PVOID&) o_vkCmdSetAttachmentFeedbackLoopEnableEXT,
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetAttachmentFeedbackLoopEnableEXT,
                          hk_vkCmdSetAttachmentFeedbackLoopEnableEXT);
 
         if (o_vkCmdBuildClusterAccelerationStructureIndirectNV)
-            DetourAttach(&(PVOID&) o_vkCmdBuildClusterAccelerationStructureIndirectNV,
+            HookBackend::Attach(&(PVOID&) o_vkCmdBuildClusterAccelerationStructureIndirectNV,
                          hk_vkCmdBuildClusterAccelerationStructureIndirectNV);
 
         if (o_vkCmdBuildPartitionedAccelerationStructuresNV)
-            DetourAttach(&(PVOID&) o_vkCmdBuildPartitionedAccelerationStructuresNV,
+            HookBackend::Attach(&(PVOID&) o_vkCmdBuildPartitionedAccelerationStructuresNV,
                          hk_vkCmdBuildPartitionedAccelerationStructuresNV);
 
         if (o_vkCmdPreprocessGeneratedCommandsEXT)
-            DetourAttach(&(PVOID&) o_vkCmdPreprocessGeneratedCommandsEXT, hk_vkCmdPreprocessGeneratedCommandsEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdPreprocessGeneratedCommandsEXT, hk_vkCmdPreprocessGeneratedCommandsEXT);
 
         if (o_vkCmdExecuteGeneratedCommandsEXT)
-            DetourAttach(&(PVOID&) o_vkCmdExecuteGeneratedCommandsEXT, hk_vkCmdExecuteGeneratedCommandsEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdExecuteGeneratedCommandsEXT, hk_vkCmdExecuteGeneratedCommandsEXT);
 
         if (o_vkCmdBuildAccelerationStructuresKHR)
-            DetourAttach(&(PVOID&) o_vkCmdBuildAccelerationStructuresKHR, hk_vkCmdBuildAccelerationStructuresKHR);
+            HookBackend::Attach(&(PVOID&) o_vkCmdBuildAccelerationStructuresKHR, hk_vkCmdBuildAccelerationStructuresKHR);
 
         if (o_vkCmdBuildAccelerationStructuresIndirectKHR)
-            DetourAttach(&(PVOID&) o_vkCmdBuildAccelerationStructuresIndirectKHR,
+            HookBackend::Attach(&(PVOID&) o_vkCmdBuildAccelerationStructuresIndirectKHR,
                          hk_vkCmdBuildAccelerationStructuresIndirectKHR);
 
         if (o_vkCmdCopyAccelerationStructureKHR)
-            DetourAttach(&(PVOID&) o_vkCmdCopyAccelerationStructureKHR, hk_vkCmdCopyAccelerationStructureKHR);
+            HookBackend::Attach(&(PVOID&) o_vkCmdCopyAccelerationStructureKHR, hk_vkCmdCopyAccelerationStructureKHR);
 
         if (o_vkCmdCopyAccelerationStructureToMemoryKHR)
-            DetourAttach(&(PVOID&) o_vkCmdCopyAccelerationStructureToMemoryKHR,
+            HookBackend::Attach(&(PVOID&) o_vkCmdCopyAccelerationStructureToMemoryKHR,
                          hk_vkCmdCopyAccelerationStructureToMemoryKHR);
 
         if (o_vkCmdCopyMemoryToAccelerationStructureKHR)
-            DetourAttach(&(PVOID&) o_vkCmdCopyMemoryToAccelerationStructureKHR,
+            HookBackend::Attach(&(PVOID&) o_vkCmdCopyMemoryToAccelerationStructureKHR,
                          hk_vkCmdCopyMemoryToAccelerationStructureKHR);
 
         if (o_vkCmdWriteAccelerationStructuresPropertiesKHR)
-            DetourAttach(&(PVOID&) o_vkCmdWriteAccelerationStructuresPropertiesKHR,
+            HookBackend::Attach(&(PVOID&) o_vkCmdWriteAccelerationStructuresPropertiesKHR,
                          hk_vkCmdWriteAccelerationStructuresPropertiesKHR);
 
         if (o_vkCmdTraceRaysKHR)
-            DetourAttach(&(PVOID&) o_vkCmdTraceRaysKHR, hk_vkCmdTraceRaysKHR);
+            HookBackend::Attach(&(PVOID&) o_vkCmdTraceRaysKHR, hk_vkCmdTraceRaysKHR);
 
         if (o_vkCmdTraceRaysIndirectKHR)
-            DetourAttach(&(PVOID&) o_vkCmdTraceRaysIndirectKHR, hk_vkCmdTraceRaysIndirectKHR);
+            HookBackend::Attach(&(PVOID&) o_vkCmdTraceRaysIndirectKHR, hk_vkCmdTraceRaysIndirectKHR);
 
         if (o_vkCmdSetRayTracingPipelineStackSizeKHR)
-            DetourAttach(&(PVOID&) o_vkCmdSetRayTracingPipelineStackSizeKHR, hk_vkCmdSetRayTracingPipelineStackSizeKHR);
+            HookBackend::Attach(&(PVOID&) o_vkCmdSetRayTracingPipelineStackSizeKHR, hk_vkCmdSetRayTracingPipelineStackSizeKHR);
 
         if (o_vkCmdDrawMeshTasksEXT)
-            DetourAttach(&(PVOID&) o_vkCmdDrawMeshTasksEXT, hk_vkCmdDrawMeshTasksEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdDrawMeshTasksEXT, hk_vkCmdDrawMeshTasksEXT);
 
         if (o_vkCmdDrawMeshTasksIndirectEXT)
-            DetourAttach(&(PVOID&) o_vkCmdDrawMeshTasksIndirectEXT, hk_vkCmdDrawMeshTasksIndirectEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdDrawMeshTasksIndirectEXT, hk_vkCmdDrawMeshTasksIndirectEXT);
 
         if (o_vkCmdDrawMeshTasksIndirectCountEXT)
-            DetourAttach(&(PVOID&) o_vkCmdDrawMeshTasksIndirectCountEXT, hk_vkCmdDrawMeshTasksIndirectCountEXT);
+            HookBackend::Attach(&(PVOID&) o_vkCmdDrawMeshTasksIndirectCountEXT, hk_vkCmdDrawMeshTasksIndirectCountEXT);
 
 #pragma endregion
 
-        auto detourResult = DetourTransactionCommit();
-        if (detourResult != NO_ERROR)
+        auto detourResult = HookBackend::Commit();
+        if (FAILED(detourResult))
         {
             LOG_ERROR("Failed to attach Vulkan hooks: %d", detourResult);
 
@@ -10808,20 +10812,19 @@ void Vulkan_wDx12::Unhook()
 
     LOG_INFO("Detaching Vulkan hooks");
 
-    DetourTransactionBegin();
-    DetourUpdateThread(GetCurrentThread());
+    HookBackend::Begin();
 
     if (o_vkQueueSubmit)
-        DetourDetach(&(PVOID&) o_vkQueueSubmit, hk_vkQueueSubmit);
+        HookBackend::Detach(&(PVOID&) o_vkQueueSubmit, hk_vkQueueSubmit);
 
     if (o_vkQueueSubmit2)
-        DetourDetach(&(PVOID&) o_vkQueueSubmit2, hk_vkQueueSubmit2);
+        HookBackend::Detach(&(PVOID&) o_vkQueueSubmit2, hk_vkQueueSubmit2);
 
     if (o_vkQueueSubmit2KHR)
-        DetourDetach(&(PVOID&) o_vkQueueSubmit2KHR, hk_vkQueueSubmit2);
+        HookBackend::Detach(&(PVOID&) o_vkQueueSubmit2KHR, hk_vkQueueSubmit2);
 
-    auto detourResult = DetourTransactionCommit();
-    if (detourResult != NO_ERROR)
+    auto detourResult = HookBackend::Commit();
+    if (FAILED(detourResult))
     {
         LOG_ERROR("Failed to detach Vulkan hooks: %d", detourResult);
     }

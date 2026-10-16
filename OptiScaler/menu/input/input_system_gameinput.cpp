@@ -3,7 +3,7 @@
 
 #include <hooks/Kernel_Hooks.h>
 
-#include <detours/detours.h>
+#include <hooks/HookBackend.h>
 
 namespace OptiInput
 {
@@ -44,18 +44,17 @@ void UpdateGameInputIntegration()
         o_GameInputCreate = reinterpret_cast<GameInputCreate_t>(gameInputCreate);
     }
 
-    LONG result = NO_ERROR;
+    HRESULT result = S_OK;
 
     {
         std::scoped_lock detourLock(GetDetourTransactionMutex());
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
-        DetourAttach(reinterpret_cast<PVOID*>(&o_GameInputCreate), hkGameInputCreate);
-        result = DetourTransactionCommit();
+        HookBackend::Begin();
+        HookBackend::Attach(reinterpret_cast<PVOID*>(&o_GameInputCreate), hkGameInputCreate);
+        result = HookBackend::Commit();
     }
 
     std::unique_lock lock(_state.Mutex);
-    _state.GameInputCreateHookInstalled = result == NO_ERROR;
+    _state.GameInputCreateHookInstalled = SUCCEEDED(result);
 
     if (!_state.GameInputCreateHookInstalled)
     {
@@ -73,13 +72,12 @@ bool RemoveGameInputHooksLocked()
         return true;
     }
 
-    DetourTransactionBegin();
-    DetourUpdateThread(GetCurrentThread());
-    DetourDetach(reinterpret_cast<PVOID*>(&o_GameInputCreate), hkGameInputCreate);
+    HookBackend::Begin();
+    HookBackend::Detach(reinterpret_cast<PVOID*>(&o_GameInputCreate), hkGameInputCreate);
 
-    const LONG result = DetourTransactionCommit();
+    const HRESULT result = HookBackend::Commit();
 
-    if (result != NO_ERROR)
+    if (FAILED(result))
     {
         LOG_WARN("GameInputCreate hook removal failed result:{}; retaining trampoline for a safe retry", result);
         return false;

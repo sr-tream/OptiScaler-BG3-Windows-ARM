@@ -2,7 +2,7 @@
 
 #include "SysUtils.h"
 
-#include <detours/detours.h>
+#include <hooks/HookBackend.h>
 
 class KernelBaseProxy
 {
@@ -92,11 +92,10 @@ class KernelBaseProxy
     {
         auto addr = FreeLibrary_Hooked();
 
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
-        DetourAttach(&(PVOID&) addr, method);
-        auto detourResult = DetourTransactionCommit();
-        if (detourResult != NO_ERROR)
+        HookBackend::Begin();
+        HookBackend::Attach(&(PVOID&) addr, method);
+        auto detourResult = HookBackend::Commit();
+        if (FAILED(detourResult))
         {
             LOG_ERROR("Failed to hook: {:X}", detourResult);
             return nullptr;
@@ -110,11 +109,10 @@ class KernelBaseProxy
     {
         auto addr = LoadLibraryA_Hooked();
 
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
-        DetourAttach(&(PVOID&) addr, method);
-        auto detourResult = DetourTransactionCommit();
-        if (detourResult != NO_ERROR)
+        HookBackend::Begin();
+        HookBackend::Attach(&(PVOID&) addr, method);
+        auto detourResult = HookBackend::Commit();
+        if (FAILED(detourResult))
         {
             LOG_ERROR("Failed to hook: {:X}", detourResult);
             return nullptr;
@@ -128,11 +126,10 @@ class KernelBaseProxy
     {
         auto addr = LoadLibraryW_Hooked();
 
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
-        DetourAttach(&(PVOID&) addr, method);
-        auto detourResult = DetourTransactionCommit();
-        if (detourResult != NO_ERROR)
+        HookBackend::Begin();
+        HookBackend::Attach(&(PVOID&) addr, method);
+        auto detourResult = HookBackend::Commit();
+        if (FAILED(detourResult))
         {
             LOG_ERROR("Failed to hook: {:X}", detourResult);
             return nullptr;
@@ -146,11 +143,10 @@ class KernelBaseProxy
     {
         auto addr = LoadLibraryExA_Hooked();
 
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
-        DetourAttach(&(PVOID&) addr, method);
-        auto detourResult = DetourTransactionCommit();
-        if (detourResult != NO_ERROR)
+        HookBackend::Begin();
+        HookBackend::Attach(&(PVOID&) addr, method);
+        auto detourResult = HookBackend::Commit();
+        if (FAILED(detourResult))
         {
             LOG_ERROR("Failed to hook: {:X}", detourResult);
             return nullptr;
@@ -164,11 +160,10 @@ class KernelBaseProxy
     {
         auto addr = LoadLibraryExW_Hooked();
 
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
-        DetourAttach(&(PVOID&) addr, method);
-        auto detourResult = DetourTransactionCommit();
-        if (detourResult != NO_ERROR)
+        HookBackend::Begin();
+        HookBackend::Attach(&(PVOID&) addr, method);
+        auto detourResult = HookBackend::Commit();
+        if (FAILED(detourResult))
         {
             LOG_ERROR("Failed to hook: {:X}", detourResult);
             return nullptr;
@@ -182,11 +177,10 @@ class KernelBaseProxy
     {
         auto addr = GetProcAddress_Hooked();
 
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
-        DetourAttach(&(PVOID&) addr, method);
-        auto detourResult = DetourTransactionCommit();
-        if (detourResult != NO_ERROR)
+        HookBackend::Begin();
+        HookBackend::Attach(&(PVOID&) addr, method);
+        auto detourResult = HookBackend::Commit();
+        if (FAILED(detourResult))
         {
             LOG_ERROR("Failed to hook: {:X}", detourResult);
             return nullptr;
@@ -200,11 +194,10 @@ class KernelBaseProxy
     {
         auto addr = GetModuleHandleA_Hooked();
 
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
-        DetourAttach(&(PVOID&) addr, method);
-        auto detourResult = DetourTransactionCommit();
-        if (detourResult != NO_ERROR)
+        HookBackend::Begin();
+        HookBackend::Attach(&(PVOID&) addr, method);
+        auto detourResult = HookBackend::Commit();
+        if (FAILED(detourResult))
         {
             LOG_ERROR("Failed to hook: {:X}", detourResult);
             return nullptr;
@@ -218,11 +211,10 @@ class KernelBaseProxy
     {
         auto addr = GetModuleHandleW_Hooked();
 
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
-        DetourAttach(&(PVOID&) addr, method);
-        auto detourResult = DetourTransactionCommit();
-        if (detourResult != NO_ERROR)
+        HookBackend::Begin();
+        HookBackend::Attach(&(PVOID&) addr, method);
+        auto detourResult = HookBackend::Commit();
+        if (FAILED(detourResult))
         {
             LOG_ERROR("Failed to hook: {:X}", detourResult);
             return nullptr;
@@ -236,11 +228,10 @@ class KernelBaseProxy
     {
         auto addr = GetModuleHandleExA_Hooked();
 
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
-        DetourAttach(&(PVOID&) addr, method);
-        auto detourResult = DetourTransactionCommit();
-        if (detourResult != NO_ERROR)
+        HookBackend::Begin();
+        HookBackend::Attach(&(PVOID&) addr, method);
+        auto detourResult = HookBackend::Commit();
+        if (FAILED(detourResult))
         {
             LOG_ERROR("Failed to hook: {:X}", detourResult);
             return nullptr;
@@ -254,11 +245,10 @@ class KernelBaseProxy
     {
         auto addr = GetModuleHandleExW_Hooked();
 
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
-        DetourAttach(&(PVOID&) addr, method);
-        auto detourResult = DetourTransactionCommit();
-        if (detourResult != NO_ERROR)
+        HookBackend::Begin();
+        HookBackend::Attach(&(PVOID&) addr, method);
+        auto detourResult = HookBackend::Commit();
+        if (FAILED(detourResult))
         {
             LOG_ERROR("Failed to hook: {:X}", detourResult);
             return nullptr;

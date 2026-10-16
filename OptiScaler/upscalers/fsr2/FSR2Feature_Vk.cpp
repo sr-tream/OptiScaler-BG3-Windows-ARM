@@ -26,7 +26,7 @@ bool FSR2FeatureVk::InitFSR2(const NVSDK_NGX_Parameter* InParameters)
         void* scratchBuffer = calloc(scratchBufferSize, 1);
 
         auto errorCode = ffxFsr2GetInterfaceVK(&_contextDesc.callbacks, scratchBuffer, scratchBufferSize,
-                                               PhysicalDevice, vkGetDeviceProcAddr);
+                                               PhysicalDevice, GDPA?GDPA:vkGetDeviceProcAddr);
 
         if (errorCode != FFX_OK)
         {

@@ -14,7 +14,7 @@
 #include <fsr4/FSR4ModelSelection.h>
 
 #include "ffx_api.h"
-#include <detours/detours.h>
+#include <hooks/HookBackend.h>
 #include <ffx_framegeneration.h>
 #include <ffx_upscale.h>
 
@@ -303,26 +303,25 @@ class FfxApiProxy
         if (Config::Instance()->EnableFfxInputs.value_or_default() && main_dx12_hooked.dll != nullptr &&
             main_dx12_hooked.CreateContext != nullptr && !main_dx12_hooked.hooked)
         {
-            DetourTransactionBegin();
-            DetourUpdateThread(GetCurrentThread());
+            HookBackend::Begin();
 
             if (main_dx12_hooked.Configure != nullptr)
-                DetourAttach(&(PVOID&) main_dx12_hooked.Configure, ffxConfigure_Dx12);
+                HookBackend::Attach(&(PVOID&) main_dx12_hooked.Configure, ffxConfigure_Dx12);
 
             if (main_dx12_hooked.CreateContext != nullptr)
-                DetourAttach(&(PVOID&) main_dx12_hooked.CreateContext, ffxCreateContext_Dx12);
+                HookBackend::Attach(&(PVOID&) main_dx12_hooked.CreateContext, ffxCreateContext_Dx12);
 
             if (main_dx12_hooked.DestroyContext != nullptr)
-                DetourAttach(&(PVOID&) main_dx12_hooked.DestroyContext, ffxDestroyContext_Dx12);
+                HookBackend::Attach(&(PVOID&) main_dx12_hooked.DestroyContext, ffxDestroyContext_Dx12);
 
             if (main_dx12_hooked.Dispatch != nullptr)
-                DetourAttach(&(PVOID&) main_dx12_hooked.Dispatch, ffxDispatch_Dx12);
+                HookBackend::Attach(&(PVOID&) main_dx12_hooked.Dispatch, ffxDispatch_Dx12);
 
             if (main_dx12_hooked.Query != nullptr)
-                DetourAttach(&(PVOID&) main_dx12_hooked.Query, ffxQuery_Dx12);
+                HookBackend::Attach(&(PVOID&) main_dx12_hooked.Query, ffxQuery_Dx12);
 
-            auto detourResult = DetourTransactionCommit();
-            if (detourResult != NO_ERROR)
+            auto detourResult = HookBackend::Commit();
+            if (FAILED(detourResult))
             {
                 LOG_ERROR("DetourTransactionCommit result: {:X}", detourResult);
                 main_dx12_hooked.Configure = nullptr;
@@ -455,26 +454,25 @@ class FfxApiProxy
         if (Config::Instance()->EnableFfxInputs.value_or_default() && upscaling_dx12_hooked.dll != nullptr &&
             upscaling_dx12_hooked.CreateContext != nullptr && !upscaling_dx12_hooked.hooked)
         {
-            DetourTransactionBegin();
-            DetourUpdateThread(GetCurrentThread());
+            HookBackend::Begin();
 
             if (upscaling_dx12_hooked.Configure != nullptr)
-                DetourAttach(&(PVOID&) upscaling_dx12_hooked.Configure, ffxConfigure_Dx12);
+                HookBackend::Attach(&(PVOID&) upscaling_dx12_hooked.Configure, ffxConfigure_Dx12);
 
             if (upscaling_dx12_hooked.CreateContext != nullptr)
-                DetourAttach(&(PVOID&) upscaling_dx12_hooked.CreateContext, ffxCreateContext_Dx12);
+                HookBackend::Attach(&(PVOID&) upscaling_dx12_hooked.CreateContext, ffxCreateContext_Dx12);
 
             if (upscaling_dx12_hooked.DestroyContext != nullptr)
-                DetourAttach(&(PVOID&) upscaling_dx12_hooked.DestroyContext, ffxDestroyContext_Dx12);
+                HookBackend::Attach(&(PVOID&) upscaling_dx12_hooked.DestroyContext, ffxDestroyContext_Dx12);
 
             if (upscaling_dx12_hooked.Dispatch != nullptr)
-                DetourAttach(&(PVOID&) upscaling_dx12_hooked.Dispatch, ffxDispatch_Dx12);
+                HookBackend::Attach(&(PVOID&) upscaling_dx12_hooked.Dispatch, ffxDispatch_Dx12);
 
             if (upscaling_dx12_hooked.Query != nullptr)
-                DetourAttach(&(PVOID&) upscaling_dx12_hooked.Query, ffxQuery_Dx12);
+                HookBackend::Attach(&(PVOID&) upscaling_dx12_hooked.Query, ffxQuery_Dx12);
 
-            auto detourResult = DetourTransactionCommit();
-            if (detourResult != NO_ERROR)
+            auto detourResult = HookBackend::Commit();
+            if (FAILED(detourResult))
             {
                 LOG_ERROR("DetourTransactionCommit result: {:X}", detourResult);
                 upscaling_dx12_hooked.Configure = nullptr;
@@ -593,26 +591,25 @@ class FfxApiProxy
         if (Config::Instance()->EnableFfxInputs.value_or_default() && fg_dx12_hooked.dll != nullptr &&
             fg_dx12_hooked.CreateContext != nullptr && !fg_dx12_hooked.hooked)
         {
-            DetourTransactionBegin();
-            DetourUpdateThread(GetCurrentThread());
+            HookBackend::Begin();
 
             if (fg_dx12_hooked.Configure != nullptr)
-                DetourAttach(&(PVOID&) fg_dx12_hooked.Configure, ffxConfigure_Dx12);
+                HookBackend::Attach(&(PVOID&) fg_dx12_hooked.Configure, ffxConfigure_Dx12);
 
             if (fg_dx12_hooked.CreateContext != nullptr)
-                DetourAttach(&(PVOID&) fg_dx12_hooked.CreateContext, ffxCreateContext_Dx12);
+                HookBackend::Attach(&(PVOID&) fg_dx12_hooked.CreateContext, ffxCreateContext_Dx12);
 
             if (fg_dx12_hooked.DestroyContext != nullptr)
-                DetourAttach(&(PVOID&) fg_dx12_hooked.DestroyContext, ffxDestroyContext_Dx12);
+                HookBackend::Attach(&(PVOID&) fg_dx12_hooked.DestroyContext, ffxDestroyContext_Dx12);
 
             if (fg_dx12_hooked.Dispatch != nullptr)
-                DetourAttach(&(PVOID&) fg_dx12_hooked.Dispatch, ffxDispatch_Dx12);
+                HookBackend::Attach(&(PVOID&) fg_dx12_hooked.Dispatch, ffxDispatch_Dx12);
 
             if (fg_dx12_hooked.Query != nullptr)
-                DetourAttach(&(PVOID&) fg_dx12_hooked.Query, ffxQuery_Dx12);
+                HookBackend::Attach(&(PVOID&) fg_dx12_hooked.Query, ffxQuery_Dx12);
 
-            auto detourResult = DetourTransactionCommit();
-            if (detourResult != NO_ERROR)
+            auto detourResult = HookBackend::Commit();
+            if (FAILED(detourResult))
             {
                 LOG_ERROR("DetourTransactionCommit result: {:X}", detourResult);
                 fg_dx12.Configure = nullptr;
@@ -735,26 +732,25 @@ class FfxApiProxy
         if (Config::Instance()->EnableFfxInputs.value_or_default() && denoiser_dx12_hooked.dll != nullptr &&
             denoiser_dx12_hooked.CreateContext != nullptr && !denoiser_dx12_hooked.hooked)
         {
-            DetourTransactionBegin();
-            DetourUpdateThread(GetCurrentThread());
+            HookBackend::Begin();
 
             if (denoiser_dx12_hooked.Configure != nullptr)
-                DetourAttach(&(PVOID&) denoiser_dx12_hooked.Configure, ffxConfigure_Dx12);
+                HookBackend::Attach(&(PVOID&) denoiser_dx12_hooked.Configure, ffxConfigure_Dx12);
 
             if (denoiser_dx12_hooked.CreateContext != nullptr)
-                DetourAttach(&(PVOID&) denoiser_dx12_hooked.CreateContext, ffxCreateContext_Dx12);
+                HookBackend::Attach(&(PVOID&) denoiser_dx12_hooked.CreateContext, ffxCreateContext_Dx12);
 
             if (denoiser_dx12_hooked.DestroyContext != nullptr)
-                DetourAttach(&(PVOID&) denoiser_dx12_hooked.DestroyContext, ffxDestroyContext_Dx12);
+                HookBackend::Attach(&(PVOID&) denoiser_dx12_hooked.DestroyContext, ffxDestroyContext_Dx12);
 
             if (denoiser_dx12_hooked.Dispatch != nullptr)
-                DetourAttach(&(PVOID&) denoiser_dx12_hooked.Dispatch, ffxDispatch_Dx12);
+                HookBackend::Attach(&(PVOID&) denoiser_dx12_hooked.Dispatch, ffxDispatch_Dx12);
 
             if (denoiser_dx12_hooked.Query != nullptr)
-                DetourAttach(&(PVOID&) denoiser_dx12_hooked.Query, ffxQuery_Dx12);
+                HookBackend::Attach(&(PVOID&) denoiser_dx12_hooked.Query, ffxQuery_Dx12);
 
-            auto detourResult = DetourTransactionCommit();
-            if (detourResult != NO_ERROR)
+            auto detourResult = HookBackend::Commit();
+            if (FAILED(detourResult))
             {
                 LOG_ERROR("DetourTransactionCommit result: {:X}", detourResult);
                 denoiser_dx12.Configure = nullptr;
@@ -877,26 +873,25 @@ class FfxApiProxy
         if (Config::Instance()->EnableFfxInputs.value_or_default() && radiance_dx12_hooked.dll != nullptr &&
             radiance_dx12_hooked.CreateContext != nullptr && !radiance_dx12_hooked.hooked)
         {
-            DetourTransactionBegin();
-            DetourUpdateThread(GetCurrentThread());
+            HookBackend::Begin();
 
             if (radiance_dx12_hooked.Configure != nullptr)
-                DetourAttach(&(PVOID&) radiance_dx12_hooked.Configure, ffxConfigure_Dx12);
+                HookBackend::Attach(&(PVOID&) radiance_dx12_hooked.Configure, ffxConfigure_Dx12);
 
             if (radiance_dx12_hooked.CreateContext != nullptr)
-                DetourAttach(&(PVOID&) radiance_dx12_hooked.CreateContext, ffxCreateContext_Dx12);
+                HookBackend::Attach(&(PVOID&) radiance_dx12_hooked.CreateContext, ffxCreateContext_Dx12);
 
             if (radiance_dx12_hooked.DestroyContext != nullptr)
-                DetourAttach(&(PVOID&) radiance_dx12_hooked.DestroyContext, ffxDestroyContext_Dx12);
+                HookBackend::Attach(&(PVOID&) radiance_dx12_hooked.DestroyContext, ffxDestroyContext_Dx12);
 
             if (radiance_dx12_hooked.Dispatch != nullptr)
-                DetourAttach(&(PVOID&) radiance_dx12_hooked.Dispatch, ffxDispatch_Dx12);
+                HookBackend::Attach(&(PVOID&) radiance_dx12_hooked.Dispatch, ffxDispatch_Dx12);
 
             if (radiance_dx12_hooked.Query != nullptr)
-                DetourAttach(&(PVOID&) radiance_dx12_hooked.Query, ffxQuery_Dx12);
+                HookBackend::Attach(&(PVOID&) radiance_dx12_hooked.Query, ffxQuery_Dx12);
 
-            auto detourResult = DetourTransactionCommit();
-            if (detourResult != NO_ERROR)
+            auto detourResult = HookBackend::Commit();
+            if (FAILED(detourResult))
             {
                 LOG_ERROR("DetourTransactionCommit result: {:X}", detourResult);
                 radiance_dx12.Configure = nullptr;
@@ -1526,26 +1521,25 @@ class FfxApiProxy
 
             if (Config::Instance()->EnableFfxInputs.value_or_default() && main_vk.CreateContext != nullptr)
             {
-                DetourTransactionBegin();
-                DetourUpdateThread(GetCurrentThread());
+                HookBackend::Begin();
 
                 if (main_vk.Configure != nullptr)
-                    DetourAttach(&(PVOID&) main_vk.Configure, ffxConfigure_Vk);
+                    HookBackend::Attach(&(PVOID&) main_vk.Configure, ffxConfigure_Vk);
 
                 if (main_vk.CreateContext != nullptr)
-                    DetourAttach(&(PVOID&) main_vk.CreateContext, ffxCreateContext_Vk);
+                    HookBackend::Attach(&(PVOID&) main_vk.CreateContext, ffxCreateContext_Vk);
 
                 if (main_vk.DestroyContext != nullptr)
-                    DetourAttach(&(PVOID&) main_vk.DestroyContext, ffxDestroyContext_Vk);
+                    HookBackend::Attach(&(PVOID&) main_vk.DestroyContext, ffxDestroyContext_Vk);
 
                 if (main_vk.Dispatch != nullptr)
-                    DetourAttach(&(PVOID&) main_vk.Dispatch, ffxDispatch_Vk);
+                    HookBackend::Attach(&(PVOID&) main_vk.Dispatch, ffxDispatch_Vk);
 
                 if (main_vk.Query != nullptr)
-                    DetourAttach(&(PVOID&) main_vk.Query, ffxQuery_Vk);
+                    HookBackend::Attach(&(PVOID&) main_vk.Query, ffxQuery_Vk);
 
-                auto detourResult = DetourTransactionCommit();
-                if (detourResult != NO_ERROR)
+                auto detourResult = HookBackend::Commit();
+                if (FAILED(detourResult))
                 {
                     LOG_ERROR("DetourTransactionCommit result: {:X}", detourResult);
                     main_vk.Configure = nullptr;

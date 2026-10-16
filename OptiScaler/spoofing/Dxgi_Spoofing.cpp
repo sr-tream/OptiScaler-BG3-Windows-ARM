@@ -3,7 +3,7 @@
 
 #include <Config.h>
 
-#include <detours/detours.h>
+#include <hooks/HookBackend.h>
 
 #include <string>
 #include <algorithm>
@@ -269,14 +269,13 @@ void DxgiSpoofing::AttachToAdapter(IUnknown* unkAdapter)
     IDXGIAdapter* adapter = nullptr;
     bool adapterOk = unkAdapter->QueryInterface(__uuidof(IDXGIAdapter), (void**) &adapter) == S_OK;
 
-    DetourTransactionBegin();
-    DetourUpdateThread(GetCurrentThread());
+    HookBackend::Begin();
 
     if (o_GetDesc == nullptr && adapterOk)
     {
         LOG_DEBUG("Attach to GetDesc");
         o_GetDesc = (PFN_GetDesc) pVTable[8];
-        DetourAttach(&(PVOID&) o_GetDesc, hkGetDesc);
+        HookBackend::Attach(&(PVOID&) o_GetDesc, hkGetDesc);
     }
 
     if (adapter != nullptr)
@@ -287,7 +286,7 @@ void DxgiSpoofing::AttachToAdapter(IUnknown* unkAdapter)
     {
         LOG_DEBUG("Attach to GetDesc1");
         o_GetDesc1 = (PFN_GetDesc1) pVTable[10];
-        DetourAttach(&(PVOID&) o_GetDesc1, hkGetDesc1);
+        HookBackend::Attach(&(PVOID&) o_GetDesc1, hkGetDesc1);
     }
 
     if (adapter1 != nullptr)
@@ -298,7 +297,7 @@ void DxgiSpoofing::AttachToAdapter(IUnknown* unkAdapter)
     {
         LOG_DEBUG("Attach to GetDesc2");
         o_GetDesc2 = (PFN_GetDesc2) pVTable[11];
-        DetourAttach(&(PVOID&) o_GetDesc2, hkGetDesc2);
+        HookBackend::Attach(&(PVOID&) o_GetDesc2, hkGetDesc2);
     }
 
     if (adapter2 != nullptr)
@@ -309,14 +308,14 @@ void DxgiSpoofing::AttachToAdapter(IUnknown* unkAdapter)
     {
         LOG_DEBUG("Attach to GetDesc3");
         o_GetDesc3 = (PFN_GetDesc3) pVTable[18];
-        DetourAttach(&(PVOID&) o_GetDesc3, hkGetDesc3);
+        HookBackend::Attach(&(PVOID&) o_GetDesc3, hkGetDesc3);
     }
 
     if (adapter4 != nullptr)
         adapter4->Release();
 
-    auto detourResult = DetourTransactionCommit();
-    if (detourResult != NO_ERROR)
+    auto detourResult = HookBackend::Commit();
+    if (FAILED(detourResult))
     {
         LOG_ERROR("DetourTransactionCommit error: {:X}", detourResult);
         o_GetDesc = nullptr;

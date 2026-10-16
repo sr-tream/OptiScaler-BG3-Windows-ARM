@@ -1,7 +1,7 @@
 #pragma once
 #include "SysUtils.h"
 #include "Config.h"
-#include "detours/detours.h"
+#include <hooks/HookBackend.h>
 
 #include "Hook_Utils.h"
 #include <misc/IdentifyGpu.h>
@@ -93,17 +93,16 @@ static void hookGdi32()
     LOG_FUNC();
 
     o_D3DKMTQueryAdapterInfo =
-        reinterpret_cast<PFN_D3DKMTQueryAdapterInfo>(DetourFindFunction("gdi32.dll", "D3DKMTQueryAdapterInfo"));
+        reinterpret_cast<PFN_D3DKMTQueryAdapterInfo>(HookBackend::FindFunction("gdi32.dll", "D3DKMTQueryAdapterInfo"));
 
     if (o_D3DKMTQueryAdapterInfo != nullptr)
     {
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
+        HookBackend::Begin();
 
-        DetourAttach(&(PVOID&) o_D3DKMTQueryAdapterInfo, hkD3DKMTQueryAdapterInfo);
+        HookBackend::Attach(&(PVOID&) o_D3DKMTQueryAdapterInfo, hkD3DKMTQueryAdapterInfo);
 
-        auto detourResult = DetourTransactionCommit();
-        if (detourResult != NO_ERROR)
+        auto detourResult = HookBackend::Commit();
+        if (FAILED(detourResult))
         {
             LOG_ERROR("DetourTransactionCommit error: {:X}", detourResult);
             o_D3DKMTQueryAdapterInfo = nullptr;
@@ -115,13 +114,12 @@ static void unhookGdi32()
 {
     if (o_D3DKMTQueryAdapterInfo != nullptr)
     {
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
+        HookBackend::Begin();
 
-        DetourDetach(&(PVOID&) o_D3DKMTQueryAdapterInfo, hkD3DKMTQueryAdapterInfo);
+        HookBackend::Detach(&(PVOID&) o_D3DKMTQueryAdapterInfo, hkD3DKMTQueryAdapterInfo);
 
-        auto detourResult = DetourTransactionCommit();
-        if (detourResult != NO_ERROR)
+        auto detourResult = HookBackend::Commit();
+        if (FAILED(detourResult))
         {
             LOG_ERROR("DetourTransactionCommit error: {:X}", detourResult);
         }

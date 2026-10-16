@@ -3,7 +3,7 @@
 
 #include <hooks/Kernel_Hooks.h>
 
-#include <detours/detours.h>
+#include <hooks/HookBackend.h>
 
 namespace OptiInput
 {
@@ -112,31 +112,30 @@ void UpdateXInputIntegration()
         o_XInputSetState = setState;
     }
 
-    LONG result = NO_ERROR;
+    HRESULT result = S_OK;
 
     {
         std::scoped_lock detourLock(GetDetourTransactionMutex());
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
+        HookBackend::Begin();
 
         if (o_XInputGetState != nullptr)
-            DetourAttach(reinterpret_cast<PVOID*>(&o_XInputGetState), hkXInputGetState);
+            HookBackend::Attach(reinterpret_cast<PVOID*>(&o_XInputGetState), hkXInputGetState);
 
         if (o_XInputGetStateEx != nullptr)
-            DetourAttach(reinterpret_cast<PVOID*>(&o_XInputGetStateEx), hkXInputGetStateEx);
+            HookBackend::Attach(reinterpret_cast<PVOID*>(&o_XInputGetStateEx), hkXInputGetStateEx);
 
         if (o_XInputGetKeystroke != nullptr)
-            DetourAttach(reinterpret_cast<PVOID*>(&o_XInputGetKeystroke), hkXInputGetKeystroke);
+            HookBackend::Attach(reinterpret_cast<PVOID*>(&o_XInputGetKeystroke), hkXInputGetKeystroke);
 
         if (o_XInputSetState != nullptr)
-            DetourAttach(reinterpret_cast<PVOID*>(&o_XInputSetState), hkXInputSetState);
+            HookBackend::Attach(reinterpret_cast<PVOID*>(&o_XInputSetState), hkXInputSetState);
 
-        result = DetourTransactionCommit();
+        result = HookBackend::Commit();
     }
 
     std::unique_lock lock(_state.Mutex);
 
-    if (result != NO_ERROR)
+    if (FAILED(result))
     {
         LOG_ERROR("XInput hook installation failed result:{}", result);
         ClearXInputHookPointersLocked();
@@ -163,24 +162,23 @@ bool RemoveXInputHooksLocked()
         return true;
     }
 
-    DetourTransactionBegin();
-    DetourUpdateThread(GetCurrentThread());
+    HookBackend::Begin();
 
     if (_state.XInputGetStateHookInstalled && o_XInputGetState != nullptr)
-        DetourDetach(reinterpret_cast<PVOID*>(&o_XInputGetState), hkXInputGetState);
+        HookBackend::Detach(reinterpret_cast<PVOID*>(&o_XInputGetState), hkXInputGetState);
 
     if (_state.XInputGetStateExHookInstalled && o_XInputGetStateEx != nullptr)
-        DetourDetach(reinterpret_cast<PVOID*>(&o_XInputGetStateEx), hkXInputGetStateEx);
+        HookBackend::Detach(reinterpret_cast<PVOID*>(&o_XInputGetStateEx), hkXInputGetStateEx);
 
     if (_state.XInputGetKeystrokeHookInstalled && o_XInputGetKeystroke != nullptr)
-        DetourDetach(reinterpret_cast<PVOID*>(&o_XInputGetKeystroke), hkXInputGetKeystroke);
+        HookBackend::Detach(reinterpret_cast<PVOID*>(&o_XInputGetKeystroke), hkXInputGetKeystroke);
 
     if (_state.XInputSetStateHookInstalled && o_XInputSetState != nullptr)
-        DetourDetach(reinterpret_cast<PVOID*>(&o_XInputSetState), hkXInputSetState);
+        HookBackend::Detach(reinterpret_cast<PVOID*>(&o_XInputSetState), hkXInputSetState);
 
-    const LONG result = DetourTransactionCommit();
+    const HRESULT result = HookBackend::Commit();
 
-    if (result != NO_ERROR)
+    if (FAILED(result))
     {
         LOG_WARN("XInput hook removal failed result:{}; retaining trampoline pointers for a safe retry", result);
         return false;

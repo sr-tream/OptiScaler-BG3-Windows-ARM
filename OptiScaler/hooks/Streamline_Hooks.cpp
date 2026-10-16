@@ -15,7 +15,7 @@
 #include <json.hpp>
 #include <sl1_reflex.h>
 #include <magic_enum.hpp>
-#include "detours/detours.h"
+#include <hooks/HookBackend.h>
 
 #include <intrin.h>
 #pragma intrinsic(_ReturnAddress)
@@ -1873,14 +1873,13 @@ void StreamlineHooks::hkcommon_slSetParameters_sl1(void* params)
         // It's flipped, 0 -> set void*, 7 -> get void*
         o_setVoid = (PFN_setVoid) vtable[0];
 
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
+        HookBackend::Begin();
 
         if (o_setVoid != nullptr)
-            DetourAttach(&(PVOID&) o_setVoid, hk_setVoid);
+            HookBackend::Attach(&(PVOID&) o_setVoid, hk_setVoid);
 
-        auto detourResult = DetourTransactionCommit();
-        if (detourResult != NO_ERROR)
+        auto detourResult = HookBackend::Commit();
+        if (FAILED(detourResult))
         {
             LOG_ERROR("Failed to hook setVoid: {:X}", detourResult);
             o_setVoid = nullptr;
@@ -1952,43 +1951,42 @@ void StreamlineHooks::unhookInterposer()
 {
     LOG_FUNC();
 
-    DetourTransactionBegin();
-    DetourUpdateThread(GetCurrentThread());
+    HookBackend::Begin();
 
     if (o_slSetTag)
-        DetourDetach(&(PVOID&) o_slSetTag, hkslSetTag);
+        HookBackend::Detach(&(PVOID&) o_slSetTag, hkslSetTag);
 
     if (o_slSetTagForFrame)
-        DetourDetach(&(PVOID&) o_slSetTagForFrame, hkslSetTagForFrame);
+        HookBackend::Detach(&(PVOID&) o_slSetTagForFrame, hkslSetTagForFrame);
 
     if (o_slSetConstants)
-        DetourDetach(&(PVOID&) o_slSetConstants, hkslSetConstants);
+        HookBackend::Detach(&(PVOID&) o_slSetConstants, hkslSetConstants);
 
     if (o_slEvaluateFeature)
-        DetourDetach(&(PVOID&) o_slEvaluateFeature, hkslEvaluateFeature);
+        HookBackend::Detach(&(PVOID&) o_slEvaluateFeature, hkslEvaluateFeature);
 
     if (o_slInit)
-        DetourDetach(&(PVOID&) o_slInit, hkslInit);
+        HookBackend::Detach(&(PVOID&) o_slInit, hkslInit);
 
     if (o_slInit_sl1)
-        DetourDetach(&(PVOID&) o_slInit_sl1, hkslInit_sl1);
+        HookBackend::Detach(&(PVOID&) o_slInit_sl1, hkslInit_sl1);
 
     if (o_slSetTag_sl1)
-        DetourDetach(&(PVOID&) o_slSetTag_sl1, hkslSetTag_sl1);
+        HookBackend::Detach(&(PVOID&) o_slSetTag_sl1, hkslSetTag_sl1);
 
     if (o_slSetConstants_interposer_sl1)
-        DetourDetach(&(PVOID&) o_slSetConstants_interposer_sl1, hkslSetConstants_sl1);
+        HookBackend::Detach(&(PVOID&) o_slSetConstants_interposer_sl1, hkslSetConstants_sl1);
 
     if (o_slEvaluateFeature_sl1)
-        DetourDetach(&(PVOID&) o_slEvaluateFeature_sl1, hkslEvaluateFeature_sl1);
+        HookBackend::Detach(&(PVOID&) o_slEvaluateFeature_sl1, hkslEvaluateFeature_sl1);
 
     // if (o_logCallback)
-    //     DetourDetach(&(PVOID&) o_logCallback, streamlineLogCallback);
+    //     HookBackend::Detach(&(PVOID&) o_logCallback, streamlineLogCallback);
     // else if (o_logCallback_sl1)
-    //     DetourDetach(&(PVOID&) o_logCallback_sl1, streamlineLogCallback);
+    //     HookBackend::Detach(&(PVOID&) o_logCallback_sl1, streamlineLogCallback);
 
-    auto detourResult = DetourTransactionCommit();
-    if (detourResult != NO_ERROR)
+    auto detourResult = HookBackend::Commit();
+    if (FAILED(detourResult))
     {
         LOG_ERROR("DetourTransactionCommit error: {:X}", detourResult);
     }
@@ -2089,62 +2087,61 @@ void StreamlineHooks::hookInterposer(HMODULE slInterposer)
             if (o_slInit != nullptr)
             {
                 LOG_TRACE("Hooking v2");
-                DetourTransactionBegin();
-                DetourUpdateThread(GetCurrentThread());
+                HookBackend::Begin();
 
-                DetourAttach(&(PVOID&) o_slInit, hkslInit);
+                HookBackend::Attach(&(PVOID&) o_slInit, hkslInit);
 
                 if (o_slEvaluateFeature != nullptr)
-                    DetourAttach(&(PVOID&) o_slEvaluateFeature, hkslEvaluateFeature);
+                    HookBackend::Attach(&(PVOID&) o_slEvaluateFeature, hkslEvaluateFeature);
 
                 if (State::Instance().activeFgInput == FGInput::NvngxFG ||
                     State::Instance().activeFgInput == FGInput::DLSSG)
                 {
                     if (o_slSetTag != nullptr)
-                        DetourAttach(&(PVOID&) o_slSetTag, hkslSetTag);
+                        HookBackend::Attach(&(PVOID&) o_slSetTag, hkslSetTag);
 
                     if (o_slSetTagForFrame != nullptr)
-                        DetourAttach(&(PVOID&) o_slSetTagForFrame, hkslSetTagForFrame);
+                        HookBackend::Attach(&(PVOID&) o_slSetTagForFrame, hkslSetTagForFrame);
 
                     if (o_slSetConstants != nullptr)
-                        DetourAttach(&(PVOID&) o_slSetConstants, hkslSetConstants);
+                        HookBackend::Attach(&(PVOID&) o_slSetConstants, hkslSetConstants);
                 }
 
                 if (State::Instance().activeFgInput == FGInput::DLSSG)
                 {
                     if (o_slIsFeatureSupported != nullptr)
-                        DetourAttach(&(PVOID&) o_slIsFeatureSupported, hkslIsFeatureSupported);
+                        HookBackend::Attach(&(PVOID&) o_slIsFeatureSupported, hkslIsFeatureSupported);
 
                     if (o_slIsFeatureLoaded != nullptr)
-                        DetourAttach(&(PVOID&) o_slIsFeatureLoaded, hkslIsFeatureLoaded);
+                        HookBackend::Attach(&(PVOID&) o_slIsFeatureLoaded, hkslIsFeatureLoaded);
 
                     if (o_slGetFeatureRequirements != nullptr)
-                        DetourAttach(&(PVOID&) o_slGetFeatureRequirements, hkslGetFeatureRequirements);
+                        HookBackend::Attach(&(PVOID&) o_slGetFeatureRequirements, hkslGetFeatureRequirements);
 
                     if (o_slGetFeatureVersion != nullptr)
-                        DetourAttach(&(PVOID&) o_slGetFeatureVersion, hkslGetFeatureVersion);
+                        HookBackend::Attach(&(PVOID&) o_slGetFeatureVersion, hkslGetFeatureVersion);
 
                     if (o_slGetFeatureFunction != nullptr)
-                        DetourAttach(&(PVOID&) o_slGetFeatureFunction, hkslGetFeatureFunction);
+                        HookBackend::Attach(&(PVOID&) o_slGetFeatureFunction, hkslGetFeatureFunction);
 
                     if (o_slSetFeatureLoaded != nullptr)
-                        DetourAttach(&(PVOID&) o_slSetFeatureLoaded, hkslSetFeatureLoaded);
+                        HookBackend::Attach(&(PVOID&) o_slSetFeatureLoaded, hkslSetFeatureLoaded);
 
                     if (o_slAllocateResources != nullptr)
-                        DetourAttach(&(PVOID&) o_slAllocateResources, hkslAllocateResources);
+                        HookBackend::Attach(&(PVOID&) o_slAllocateResources, hkslAllocateResources);
 
                     if (o_slFreeResources != nullptr)
-                        DetourAttach(&(PVOID&) o_slFreeResources, hkslFreeResources);
+                        HookBackend::Attach(&(PVOID&) o_slFreeResources, hkslFreeResources);
                 }
 
                 // if (o_slGetNativeInterface != nullptr)
-                //     DetourAttach(&(PVOID&) o_slGetNativeInterface, hkslGetNativeInterface);
+                //     HookBackend::Attach(&(PVOID&) o_slGetNativeInterface, hkslGetNativeInterface);
 
                 // if (o_slSetD3DDevice != nullptr)
-                //     DetourAttach(&(PVOID&) o_slSetD3DDevice, hkslSetD3DDevice);
+                //     HookBackend::Attach(&(PVOID&) o_slSetD3DDevice, hkslSetD3DDevice);
 
-                auto detourResult = DetourTransactionCommit();
-                if (detourResult != NO_ERROR)
+                auto detourResult = HookBackend::Commit();
+                if (FAILED(detourResult))
                 {
                     LOG_ERROR("Failed to hook sl.interposer v2: {:X}", detourResult);
                     o_slSetTag = nullptr;
@@ -2181,26 +2178,25 @@ void StreamlineHooks::hookInterposer(HMODULE slInterposer)
             if (o_slInit_sl1 || o_slSetTag_sl1 || o_slSetConstants_interposer_sl1 || o_slEvaluateFeature_sl1)
             {
                 LOG_TRACE("Hooking v1");
-                DetourTransactionBegin();
-                DetourUpdateThread(GetCurrentThread());
+                HookBackend::Begin();
 
                 if (o_slInit_sl1)
-                    DetourAttach(&(PVOID&) o_slInit_sl1, hkslInit_sl1);
+                    HookBackend::Attach(&(PVOID&) o_slInit_sl1, hkslInit_sl1);
 
                 if (IsSL1AndFGActive())
                 {
                     if (o_slSetTag_sl1)
-                        DetourAttach(&(PVOID&) o_slSetTag_sl1, hkslSetTag_sl1);
+                        HookBackend::Attach(&(PVOID&) o_slSetTag_sl1, hkslSetTag_sl1);
 
                     if (o_slSetConstants_interposer_sl1)
-                        DetourAttach(&(PVOID&) o_slSetConstants_interposer_sl1, hkslSetConstants_sl1);
+                        HookBackend::Attach(&(PVOID&) o_slSetConstants_interposer_sl1, hkslSetConstants_sl1);
 
                     if (o_slEvaluateFeature_sl1)
-                        DetourAttach(&(PVOID&) o_slEvaluateFeature_sl1, hkslEvaluateFeature_sl1);
+                        HookBackend::Attach(&(PVOID&) o_slEvaluateFeature_sl1, hkslEvaluateFeature_sl1);
                 }
 
-                auto detourResult = DetourTransactionCommit();
-                if (detourResult != NO_ERROR)
+                auto detourResult = HookBackend::Commit();
+                if (FAILED(detourResult))
                 {
                     LOG_ERROR("Failed to hook sl.interposer v1: {:X}", detourResult);
                     o_slInit_sl1 = nullptr;
@@ -2411,11 +2407,10 @@ void StreamlineHooks::releaseSlot(SlPlugin plugin, size_t index, bool detach)
 
     if (detach && alive)
     {
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
-        DetourDetach(&(PVOID&) slot.original, (PVOID) slotDetour(plugin, index));
+        HookBackend::Begin();
+        HookBackend::Detach(&(PVOID&) slot.original, (PVOID) slotDetour(plugin, index));
 
-        if (auto r = DetourTransactionCommit(); r != NO_ERROR)
+        if (auto r = HookBackend::Commit(); FAILED(r))
         {
             LOG_ERROR("Failed to unhook {} ({:X}): {:X}", pluginName(plugin), (size_t) slot.module, r);
             return;
@@ -2526,11 +2521,10 @@ void StreamlineHooks::hookPlugin(SlPlugin plugin, HMODULE module)
 
     LOG_TRACE("Hooking slGetPluginFunction in {} (slot {})", name, index);
 
-    DetourTransactionBegin();
-    DetourUpdateThread(GetCurrentThread());
-    DetourAttach(&(PVOID&) slot.original, (PVOID) slotDetour(plugin, index));
+    HookBackend::Begin();
+    HookBackend::Attach(&(PVOID&) slot.original, (PVOID) slotDetour(plugin, index));
 
-    if (auto r = DetourTransactionCommit(); r != NO_ERROR)
+    if (auto r = HookBackend::Commit(); FAILED(r))
     {
         LOG_ERROR("Failed to hook {}: {:X}", name, r);
         slot.original = nullptr;

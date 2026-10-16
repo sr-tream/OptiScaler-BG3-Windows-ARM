@@ -31,6 +31,7 @@ class VulkanHooks
 
     // The window a surface was created for
     static HWND SurfaceWindow(VkSurfaceKHR surface);
+    static bool GameWindowInactive();
 
     // vkGetDeviceProcAddr without OptiScaler's hooks
     static PFN_vkVoidFunction GetDeviceProcAddr(VkDevice device, const char* pName);
