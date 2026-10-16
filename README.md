@@ -15,8 +15,6 @@ FSR 3 here means **upscaling**. Frame generation is not part of the verified set
 - Retains the original native commands for fallback if a replacement cannot be recorded safely, and keeps replacement contexts alive until submitted GPU work finishes.
 - Keeps the game's native Vulkan swapchain when frame generation is disabled and defers cursor changes to the window thread.
 
-Temporary GPU tracing, memory dumps, the render-task tracing hook, and automatic A/B profiling have been removed. Normal OptiScaler logging and its timing overlay remain available.
-
 ## Supported setup
 
 The native integration is deliberately limited to the verified **Vulkan `bg3.exe`** build and shader signatures. A different executable or shader build disables this integration rather than guessing offsets. The tested executable has SHA-256:
